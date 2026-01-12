@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel Principal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+    <h2 class="mb-0">Painel Principal</h2>
+</div>
+
+<div class="admin-tabs">
+    <ul class="nav nav-pills" id="mainTab" role="tablist">
+        <li class="nav-item"><a class="nav-link {% if active_tab == 'caminhoes' %}active{% endif %}" id="caminhoes-tab" data-toggle="tab" href="#caminhoes" role="tab" aria-controls="caminhoes"><i class="fas fa-truck mr-2"></i>Caminhões</a></li>
+        <li class="nav-item"><a class="nav-link {% if active_tab == 'motoristas' %}active{% endif %}" id="motoristas-tab" data-toggle="tab" href="#motoristas" role="tab" aria-controls="motoristas"><i class="fas fa-id-card mr-2"></i>Motoristas</a></li>
+        <li class="nav-item"><a class="nav-link {% if active_tab == 'gerar-agenda' %}active{% endif %}" id="gerar-agenda-tab" data-toggle="tab" href="#gerar-agenda" role="tab" aria-controls="gerar-agenda"><i class="fas fa-calendar-alt mr-2"></i>Gerar Agenda</a></li>
+        <li class="nav-item"><a class="nav-link {% if active_tab == 'cargas' %}active{% endif %}" id="cargas-tab" data-toggle="tab" href="#cargas" role="tab" aria-controls="cargas"><i class="fas fa-history mr-2"></i>Histórico de Agendas</a></li>
+    </ul>
+</div>
+
+<div class="tab-content" id="mainTabContent">
+    <!-- Seção de Caminhões -->
+    <div class="tab-pane fade {% if active_tab == 'caminhoes' %}show active{% endif %}" id="caminhoes" role="tabpanel" aria-labelledby="caminhoes-tab">
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Adicionar Novo Caminhão</h3></div>
+            <div class="card-body">
+                <form action="{{ url_for('add_caminhao') }}" method="post">
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-3"><label>Placa</label><input type="text" name="placa" class="form-control form-control-sm" required></div>
+                        <div class="form-group col-md-3"><label>UF</label><select name="uf" class="form-control form-control-sm" required><option value="">Selecione...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+                        <div class="form-group col-md-3"><label>Tipo Carroceria</label><select name="tipo_carroceria" class="form-control form-control-sm"><option value="">Selecione...</option>{% for tipo in tipos_carroceria %}<option value="{{ tipo }}">{{ tipo }}</option>{% endfor %}</select></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-2"><label>Placa Reboque 1</label><input type="text" name="placa_reboque1" class="form-control form-control-sm"></div>
+                        <div class="form-group col-md-1"><label>UF 1</label><select name="uf1" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+                        <div class="form-group col-md-2"><label>Placa Reboque 2</label><input type="text" name="placa_reboque2" class="form-control form-control-sm"></div>
+                        <div class="form-group col-md-1"><label>UF 2</label><select name="uf2" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+                        <div class="form-group col-md-2"><label>Placa Reboque 3</label><input type="text" name="placa_reboque3" class="form-control form-control-sm"></div>
+                        <div class="form-group col-md-1"><label>UF 3</label><select name="uf3" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i>Adicionar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Caminhões Cadastrados</h3></div>
+            <div class="card-body"><div class="table-responsive"><table class="table table-striped table-sm">
+                <thead><tr><th>Placa</th><th>UF</th><th>Carroceria</th><th>Reboque 1</th><th>Reboque 2</th><th>Reboque 3</th><th>Ações</th></tr></thead>
+                <tbody>
+                    {% for caminhao in caminhoes %}
+                    <tr><td>{{ caminhao.placa }}</td><td>{{ caminhao.uf }}</td><td>{{ caminhao.tipo_carroceria }}</td><td>{{ caminhao.placa_reboque1 or '' }}</td><td>{{ caminhao.placa_reboque2 or '' }}</td><td>{{ caminhao.placa_reboque3 or '' }}</td>
+                        <td><a href="{{ url_for('edit_caminhao', id=caminhao.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a> <a href="{{ url_for('delete_caminhao', id=caminhao.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table></div></div>
+        </div>
+    </div>
+
+    <!-- Seção de Motoristas -->
+    <div class="tab-pane fade {% if active_tab == 'motoristas' %}show active{% endif %}" id="motoristas" role="tabpanel" aria-labelledby="motoristas-tab">
+         <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Adicionar Novo Motorista</h3></div>
+            <div class="card-body">
+                <form action="{{ url_for('add_motorista') }}" method="post">
+                    <div class="form-row">
+                        <div class="form-group col-md-4"><label>Nome Completo</label><input type="text" name="nome" class="form-control form-control-sm" required></div>
+                        <div class="form-group col-md-2"><label>CPF</label><input type="text" name="cpf" id="motorista-cpf" class="form-control form-control-sm" required></div>
+                        <div class="form-group col-md-2"><label>Telefone com DDD</label><input type="text" name="telefone" id="motorista-telefone" class="form-control form-control-sm"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-5"><label>Endereço</label><input type="text" name="endereco" class="form-control form-control-sm"></div>
+                        <div class="form-group col-md-2"><label>Cidade</label><input type="text" name="cidade" class="form-control form-control-sm"></div>
+                        <div class="form-group col-md-1"><label>UF</label><select name="uf" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i>Adicionar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Motoristas Cadastrados</h3></div>
+            <div class="card-body"><table class="table table-striped table-sm">
+                <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Cidade</th><th>UF</th><th>Ações</th></tr></thead>
+                <tbody>
+                    {% for motorista in motoristas %}
+                    <tr><td>{{ motorista.nome }}</td><td>{{ motorista.cpf }}</td><td>{{ motorista.telefone or '' }}</td><td>{{ motorista.cidade or '' }}</td><td>{{ motorista.uf or '' }}</td>
+                        <td><a href="{{ url_for('edit_motorista', id=motorista.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a> <a href="{{ url_for('delete_motorista', id=motorista.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+    
+    <!-- Seção Gerar Agenda -->
+    <div class="tab-pane fade {% if active_tab == 'gerar-agenda' %}show active{% endif %}" id="gerar-agenda" role="tabpanel" aria-labelledby="gerar-agenda-tab">
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Gerar Nova Agenda</h3></div>
+            <div class="card-body">
+                <form id="form-gerar-agenda">
+                    <input type="hidden" name="motorista_id" id="hidden-motorista-id">
+                    <input type="hidden" name="caminhao_id" id="hidden-caminhao-id">
+                    <input type="hidden" name="fertipar_item_json" id="hidden-fertipar-item-json">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agenda-motorista-select">Selecione o Motorista</label>
+                                <select id="agenda-motorista-select" class="form-control form-control-sm">
+                                    <option value="">Selecione...</option>
+                                    {% for motorista in motoristas %}
+                                    <option value="{{ motorista.id }}" data-cpf="{{ motorista.cpf }}" data-telefone="{{ motorista.telefone or '' }}">{{ motorista.nome }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="agenda-motorista-info" class="info-display"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="agenda-caminhao-select">Selecione o Caminhão</label>
+                                <select id="agenda-caminhao-select" class="form-control form-control-sm">
+                                     <option value="">Selecione...</option>
+                                    {% for caminhao in caminhoes %}
+                                    <option value="{{ caminhao.id }}" data-placa="{{ caminhao.placa }}" data-uf="{{ caminhao.uf }}" data-tipo-carroceria="{{ caminhao.tipo_carroceria or '' }}" data-reboque1="{{ caminhao.placa_reboque1 or '' }}" data-uf1="{{ caminhao.uf1 or '' }}" data-reboque2="{{ caminhao.placa_reboque2 or '' }}" data-uf2="{{ caminhao.uf2 or '' }}" data-reboque3="{{ caminhao.placa_reboque3 or '' }}" data-uf3="{{ caminhao.uf3 or '' }}">{{ caminhao.placa }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div id="agenda-caminhao-info" class="info-display"></div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div id="selected-fertipar-items" class="mt-3">
+                        <!-- Itens Fertipar selecionados serão carregados aqui -->
+                    </div>
+                    <hr>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check mr-2"></i>Agendar</button>
+                        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#fertiparModal"><i class="fas fa-file-alt mr-2"></i>Dados Fertipar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Agendas em Espera</h3>
+                <button type="button" class="btn btn-success btn-sm" id="btnAgendarTodos">
+                    <i class="fas fa-play mr-2"></i>Agendar Todos
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Motorista</th>
+                                <th>Caminhão</th>
+                                <th>Protocolo</th>
+                                <th>Pedido</th>
+                                <th>Destino</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agendas-em-espera-body">
+                            {% for agenda in agendas %}
+                            <tr>
+                                <td>{{ agenda.data_agendamento.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ agenda.motorista.nome }}</td>
+                                <td>{{ agenda.caminhao.placa }}</td>
+                                <td>{{ agenda.fertipar_protocolo }}</td>
+                                <td>{{ agenda.fertipar_destino }}</td>
+                                <td><span class="badge badge-warning">{{ agenda.status }}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" title="Iniciar"><i class="fas fa-play"></i></button>
+                                    <button class="btn btn-sm btn-danger" title="Cancelar"><i class="fas fa-times"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Histórico de Agendas -->
+    <div class="tab-pane fade {% if active_tab == 'cargas' %}show active{% endif %}" id="cargas" role="tabpanel" aria-labelledby="cargas-tab">
+         <div class="card mt-4">
+            <div class="card-header"><h3 class="card-title mb-0">Histórico de Agendas Executadas</h3></div>
+            <div class="card-body">
+                <p class="text-muted">Esta aba mostra o histórico de agendas criadas e executadas pelo robô.</p>
+                <table class="table table-striped table-sm">
+                    <thead><tr><th>Descrição</th><th>Data</th><th>Caminhão</th><th>Motorista</th><th>Ações</th></tr></thead>
+                    <tbody>
+                        {% for carga in cargas %}
+                        <tr><td>{{ carga.descricao }}</td><td>{{ carga.data }}</td><td>{{ carga.caminhao.placa }}</td><td>{{ carga.motorista.nome }}</td>
+                            <td><a href="{{ url_for('delete_carga', id=carga.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Fertipar -->
+<div class="modal fade" id="fertiparModal" tabindex="-1" role="dialog" aria-labelledby="fertiparModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <h5 class="modal-title" id="fertiparModalLabel">Dados Fertipar</h5>
+            <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-info btn-sm mr-2" id="btnLerDadosFertipar">Ler Dados</button>
+                <span id="lastReadStatus" class="text-muted small"></span>
+                <button type="button" class="close ml-2" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Selecione</th>
+                        <th>Protocolo<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Pedido<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Data<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Situação<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Destino<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Qtde.<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Embalagem<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Cotação<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                        <th>Observação Cotação<input type="text" class="form-control form-control-sm filter-input" placeholder="Filtrar"></th>
+                    </tr>
+                </thead>
+                <tbody id="fertiparDataTableBody">
+                    <!-- Dados da Fertipar serão carregados aqui via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-primary">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
+{% block scripts %}
+<script>
+    // Pega o token JWT injetado pelo Flask e o armazena no localStorage.
+    const jwtToken = "{{ jwt_token or '' }}";
+    if (jwtToken) {
+        localStorage.setItem('jwt_token', jwtToken);
+    }
+</script>
+{% endblock %}

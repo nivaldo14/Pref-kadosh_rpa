@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Motorista{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-2 mb-3">
+    <h2 class="mb-0">Editar Motorista</h2>
+    <a href="{{ url_for('cadastros', tab='motoristas') }}" class="btn btn-secondary">Voltar</a>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <form method="post">
+            <div class="form-row">
+                <div class="form-group col-md-4"><label for="nome">Nome Completo</label><input type="text" name="nome" class="form-control form-control-sm" value="{{ motorista.nome }}" required></div>
+                <div class="form-group col-md-2"><label for="cpf">CPF</label><input type="text" name="cpf" id="motorista-cpf-edit" class="form-control form-control-sm" value="{{ motorista.cpf }}" required></div>
+                <div class="form-group col-md-2"><label for="telefone">Telefone com DDD</label><input type="text" name="telefone" id="motorista-telefone-edit" class="form-control form-control-sm" value="{{ motorista.telefone or '' }}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-5"><label for="endereco">Endereço</label><input type="text" name="endereco" class="form-control form-control-sm" value="{{ motorista.endereco or '' }}"></div>
+                <div class="form-group col-md-2"><label for="cidade">Cidade</label><input type="text" name="cidade" class="form-control form-control-sm" value="{{ motorista.cidade or '' }}"></div>
+                <div class="form-group col-md-1"><label for="uf">UF</label><select name="uf" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if motorista.uf == uf %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-save mr-2"></i>Salvar Alterações</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

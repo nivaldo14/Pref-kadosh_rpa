@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}Backend KadoshBot{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fertipar.css') }}">
+    <style>
+        .info-display {
+            font-size: 0.8rem;
+            color: #6c757d;
+            padding: 10px;
+            border-radius: 5px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+        }
+        .toast-like-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        .toast-like-info strong {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    {% if user %}
+    {# --- Layout para usuários logados --- #}
+    <div class="offcanvas-menu">
+        <div class="offcanvas-header">
+            <img src="{{ url_for('static', filename='img/KadoshTranspLogo.jpeg') }}" alt="Foto do Perfil" class="profile-pic">
+            <h5 class="user-name">{{ user.nome }}</h5>
+        </div>
+        <a href="{{ url_for('cadastros') }}"><i class="fas fa-pencil-alt"></i> Principal</a>
+        <a href="{{ url_for('administracao') }}"><i class="fas fa-user-cog"></i> Administração</a>
+        <a href="{{ url_for('relatorios') }}"><i class="fas fa-chart-bar"></i> Relatórios</a>
+        <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Sair</a>
+    </div>
+
+    <div class="main-content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <button class="btn btn-primary" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand ml-2" href="{{ url_for('cadastros') }}">Gerenciamento</a>
+        </nav>
+
+        <div class="container-fluid pt-4">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% else %}
+    {# --- Layout para usuários não logados (página de login) --- #}
+    <div class="container">
+        {% block login_content %}{% endblock %}
+    </div>
+    {% endif %}
+
+    <div class="alert-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="{{ url_for('static', filename='js/masks.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
+    
+    <script>
+        // Auto-close alerts
+        $(document).ready(function() {
+            // Wait 3 seconds and then fade out the alerts.
+            setTimeout(function() {
+                $(".alert").fadeOut("slow", function() {
+                    $(this).alert('close');
+                });
+            }, 3000);
+        });
+    </script>
+
+    {% if user %}
+    <script>
+        // Toggle do menu offcanvas
+        $("#menu-toggle").click(function(e) {
+            e.preventDefault();
+            $(".offcanvas-menu").toggleClass("toggled");
+            $(".main-content").toggleClass("toggled");
+        });
+    </script>
+    {% endif %}
+</body>
+</html>
