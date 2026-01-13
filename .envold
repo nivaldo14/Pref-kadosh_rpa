@@ -1,0 +1,13 @@
+# DB_HOST=db.rtslcjmhkbfnvcfxzndv.supabase.co
+# DB_PORT=5432
+# DB_NAME=postgres
+# DB_USER=postgres
+# DB_PASS="Irqdma#1036"
+# SECRET_KEY=sua_super_secret_key
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=dbkadash
+DB_USER=postgres
+DB_PASS=root
+SECRET_KEY=sua_super_secret_key

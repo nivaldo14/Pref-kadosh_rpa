@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import OperationalError
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -98,6 +99,7 @@ class ConfiguracaoRobo(db.Model):
     contato = db.Column(db.String(100), nullable=True)
     telefone = db.Column(db.String(20), nullable=True)
     head_evento = db.Column(db.Boolean, nullable=False, default=True)
+    tempo_espera_segundos = db.Column(db.Integer, nullable=True, default=30)
 
 
 class Caminhao(db.Model):
@@ -238,8 +240,16 @@ def cadastros():
     
     caminhoes = Caminhao.query.all()
     motoristas = Motorista.query.all()
-    cargas = CargasExecutada.query.all()
-    agendas_em_espera = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
+    
+    # Otimizado com Eager Loading para reduzir queries em banco de dados remoto
+    cargas = CargasExecutada.query.options(
+        joinedload(CargasExecutada.caminhao),
+        joinedload(CargasExecutada.motorista)
+    ).all()
+    agendas_em_espera = Agenda.query.filter_by(status='espera').options(
+        joinedload(Agenda.caminhao),
+        joinedload(Agenda.motorista)
+    ).order_by(Agenda.data_agendamento.desc()).all()
 
 
     # Carregar tipos de carroceria do arquivo
@@ -375,6 +385,7 @@ def salvar_configuracao_robo():
     config.contato = request.form.get('contato')
     config.telefone = request.form.get('telefone')
     config.head_evento = 'head_evento' in request.form
+    config.tempo_espera_segundos = request.form.get('tempo_espera_segundos', 30, type=int)
     
     db.session.commit()
     flash('Configuração do robô salva com sucesso!', 'success')
@@ -650,8 +661,7 @@ def api_scrape_fertipar_data():
     return jsonify({"success": True, "data": mock_data})
 
 @app.route('/api/agendas_em_espera', methods=['GET'])
-@token_required
-def api_agendas_em_espera(current_user):
+def api_agendas_em_espera():
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 

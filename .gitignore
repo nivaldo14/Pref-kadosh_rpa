@@ -1,6 +1,8 @@
 wsgi.py
 .env
+.venv/
 __pycache__/
+*.pyc
 reset_password.py
 *.sql
 /errsis/*.*
