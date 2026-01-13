@@ -19,6 +19,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
+from rpa_fertipar.rotas import scrape_fertipar_cotacoes
+
 
 import os
 from dotenv import load_dotenv
@@ -739,29 +741,29 @@ def get_caminhoes():
 
 @app.route('/api/scrape_fertipar_data', methods=['GET'])
 def api_scrape_fertipar_data():
-    simulate_error = request.args.get('simulate') == 'error'
-
     try:
-        if simulate_error:
-            # Simula um erro de execução (ex: falha de conexão, erro no robô)
-            raise ConnectionError("Simulação de falha de conexão com o site da Fertipar.")
+        # Busca a configuração do robô no banco de dados
+        config = ConfiguracaoRobo.query.first()
+        if not config:
+            return jsonify({"success": False, "message": "Configuração do robô não encontrada."}), 500
 
-        # Em um cenário real, aqui estaria a chamada para o robô de scraping.
-        # Como o robô não está implantado, retornamos uma lista vazia para
-        # indicar que a busca foi bem-sucedida, mas não encontrou dados.
-        scraped_data = [] 
+        # Chama a função de scraping com os parâmetros da configuração
+        scraped_data = scrape_fertipar_cotacoes(
+            url_login=config.url_acesso,
+            url_cotacoes=config.pagina_raspagem,
+            usuario_site=config.usuario_site,
+            senha_site=config.senha_site,
+            filial_name=config.filial
+        )
         
         return jsonify({"success": True, "data": scraped_data})
 
     except Exception as e:
-        # Log do erro no servidor para depuração
         app.logger.error(f"Erro na api_scrape_fertipar_data: {e}")
-        
-        # Retorna uma resposta de erro padronizada para o frontend
         return jsonify({
             "success": False, 
-            "message": "Não foi possível buscar os dados da Fertipar. O serviço pode estar offline ou indisponível."
-        }), 503 # Service Unavailable
+            "message": f"Não foi possível buscar os dados da Fertipar: {str(e)}"
+        }), 503
 
 @app.route('/api/agendas_em_espera', methods=['GET'])
 def api_agendas_em_espera():
