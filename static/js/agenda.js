@@ -289,8 +289,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </ul>
                                 </div>
                             </div>
+                            <div class="form-group col-md-2">
+                                <label for="carga-solicitada-input-${index}">Carga Solicitada</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ex: 10.50">
+                            </div>
                             <div class="form-group col-md-2 d-flex align-items-center justify-content-center">
-                                <button type="button" class="btn btn-success btn-sm mt-3">
+                                <button type="button" class="btn btn-success btn-sm mt-3 btn-agendar-subgrid">
                                     <i class="fas fa-play mr-1"></i>Agendar
                                 </button>
                             </div>
@@ -341,35 +345,44 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLerDadosFertipar.addEventListener('click', async function() {
             btnLerDadosFertipar.disabled = true;
             lastReadStatus.innerHTML = '<span class="text-info">Lendo dados...</span>';
-            fertiparDataTableBody.innerHTML = '<tr><td colspan="10" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Carregando...</span></div></td></tr>';
+            fertiparDataTableBody.innerHTML = '<tr><td colspan="11" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Carregando...</span></div></td></tr>';
 
             try {
+                // Para testar o cenário de erro, você pode adicionar "?simulate=error" na URL.
                 const response = await fetch('/api/scrape_fertipar_data', { headers: getAuthHeaders() });
                 
                 if (response.status === 401) {
                     showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
-                    // Opcional: redirecionar para a página de login
-                    // window.location.href = '/login';
+                    lastReadStatus.innerHTML = '<span class="text-danger">Não autorizado.</span>';
+                    populateFertiparTable([]);
                     return;
                 }
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (data.success) {
-                    populateFertiparTable(data.data);
+                if (result.success) {
+                    if (result.data.length > 0) {
+                        populateFertiparTable(result.data);
+                        showAlert('Dados Fertipar lidos com sucesso!', 'success');
+                    } else {
+                        // Sucesso, mas sem dados
+                        populateFertiparTable([]);
+                        showAlert('Não há dados de cotação disponíveis no momento.', 'info');
+                    }
                     localStorage.setItem(LAST_READ_KEY, new Date().toISOString());
                     updateLastReadStatus();
-                    showAlert('Dados Fertipar lidos com sucesso!', 'success');
                 } else {
+                    // Falha na API (success: false)
                     populateFertiparTable([]);
-                    showAlert('Erro ao ler dados Fertipar: ' + (data.error || 'Erro desconhecido'), 'danger');
+                    showAlert(result.message || 'Ocorreu um erro desconhecido ao buscar os dados.', 'danger');
                     lastReadStatus.innerHTML = '<span class="text-danger">Erro na leitura.</span>';
                 }
             } catch (error) {
+                // Erro de conexão ou outro erro de javascript
                 console.error('Erro ao ler dados Fertipar:', error);
                 populateFertiparTable([]);
-                showAlert('Erro de conexão ao ler dados Fertipar.', 'danger');
-                lastReadStatus.innerHTML = '<span class="text-danger">Erro na leitura.</span>';
+                showAlert('Erro de conexão ao tentar buscar os dados da Fertipar.', 'danger');
+                lastReadStatus.innerHTML = '<span class="text-danger">Falha na conexão.</span>';
             } finally {
                 btnLerDadosFertipar.disabled = false;
             }

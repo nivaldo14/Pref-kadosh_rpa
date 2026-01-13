@@ -99,6 +99,7 @@ class ConfiguracaoRobo(db.Model):
     contato = db.Column(db.String(100), nullable=True)
     telefone = db.Column(db.String(20), nullable=True)
     head_evento = db.Column(db.Boolean, nullable=False, default=True)
+    modo_execucao = db.Column(db.String(20), nullable=False, default='agendado') # 'agendado' ou 'teste'
     tempo_espera_segundos = db.Column(db.Integer, nullable=True, default=30)
 
 
@@ -145,7 +146,7 @@ class Agenda(db.Model):
     fertipar_destino = db.Column(db.String(100))
     fertipar_data = db.Column(db.String(50))
     fertipar_qtde = db.Column(db.String(50))
-
+    carga_solicitada = db.Column(db.Numeric(precision=10, scale=2), nullable=True) # Novo campo
     status = db.Column(db.String(50), nullable=False, default='espera')
     data_agendamento = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -277,7 +278,90 @@ def cadastros():
 def relatorios():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('relatorios.html')
+
+    active_view = request.args.get('view', 'overview')
+    
+    context = {
+        'active_view': active_view,
+        'stats': {},
+        'monthly_agendamentos_data': [],
+        'monthly_agendamentos_chart_data': {'labels': [], 'data': []},
+        'motoristas_ativos_data': [],
+        'caminhoes_por_tipo_data': [],
+        'caminhoes_por_tipo_chart_data': {'labels': [], 'data': []},
+        'top_destinos_data': []
+    }
+
+    # Dados para a Visão Geral e Dashboard Operacional
+    if active_view == 'overview':
+        context['stats']['total_motoristas'] = Motorista.query.count()
+        context['stats']['total_caminhoes'] = Caminhao.query.count()
+        
+        # Agendamentos do mês atual
+        hoje = datetime.now()
+        primeiro_dia_mes = hoje.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        agendamentos_mes_atual_count = Agenda.query.filter(Agenda.data_agendamento >= primeiro_dia_mes).count()
+        context['stats']['agendamentos_mes_atual'] = agendamentos_mes_atual_count
+
+        # Agendamentos mensais para o gráfico
+        monthly_agendamentos = db.session.query(
+            db.func.to_char(Agenda.data_agendamento, 'YYYY-MM').label('mes'),
+            db.func.count(Agenda.id).label('total')
+        ).group_by('mes').order_by('mes').all()
+
+        labels = [item.mes for item in monthly_agendamentos]
+        data = [item.total for item in monthly_agendamentos]
+        context['monthly_agendamentos_chart_data'] = {'labels': labels, 'data': data}
+
+        # Caminhões por tipo de carroceria para o gráfico
+        caminhoes_por_tipo = db.session.query(
+            Caminhao.tipo_carroceria,
+            db.func.count(Caminhao.id).label('total')
+        ).group_by(Caminhao.tipo_carroceria).all()
+
+        tipo_labels = [item.tipo_carroceria if item.tipo_carroceria else 'Não Definido' for item in caminhoes_por_tipo]
+        tipo_data = [item.total for item in caminhoes_por_tipo]
+        context['caminhoes_por_tipo_chart_data'] = {'labels': tipo_labels, 'data': tipo_data}
+
+    # Dados para Agendamentos Mensais (se for uma view separada)
+    if active_view == 'agendamentos_mensais':
+        monthly_agendamentos = db.session.query(
+            db.func.to_char(Agenda.data_agendamento, 'YYYY-MM').label('mes'),
+            db.func.count(Agenda.id).label('total')
+        ).group_by('mes').order_by('mes').all()
+        context['monthly_agendamentos_data'] = [{'mes': item.mes, 'total': item.total} for item in monthly_agendamentos]
+
+    # Dados para Motoristas Ativos
+    if active_view == 'motoristas_ativos':
+        # Motoristas que têm pelo menos um agendamento com status 'espera' ou 'em_andamento'
+        motoristas_ativos = db.session.query(
+            Motorista.nome,
+            Motorista.cpf,
+            Motorista.telefone,
+            db.func.count(Agenda.id).label('count')
+        ).join(Agenda).filter(
+            Agenda.status.in_(['espera', 'em_andamento'])
+        ).group_by(Motorista.id).order_by(db.func.count(Agenda.id).desc()).all()
+        
+        context['motoristas_ativos_data'] = [{'nome': m.nome, 'cpf': m.cpf, 'telefone': m.telefone, 'count': m.count} for m in motoristas_ativos]
+
+    # Dados para Caminhões por Tipo
+    if active_view == 'caminhoes_por_tipo':
+        caminhoes_por_tipo = db.session.query(
+            Caminhao.tipo_carroceria,
+            db.func.count(Caminhao.id).label('count')
+        ).group_by(Caminhao.tipo_carroceria).order_by(db.func.count(Caminhao.id).desc()).all()
+        context['caminhoes_por_tipo_data'] = [{'tipo_carroceria': item.tipo_carroceria if item.tipo_carroceria else 'Não Definido', 'count': item.count} for item in caminhoes_por_tipo]
+
+    # Dados para Top Destinos
+    if active_view == 'top_destinos':
+        top_destinos = db.session.query(
+            Agenda.fertipar_destino,
+            db.func.count(Agenda.id).label('count')
+        ).group_by(Agenda.fertipar_destino).order_by(db.func.count(Agenda.id).desc()).limit(10).all()
+        context['top_destinos_data'] = [{'destino': item.fertipar_destino, 'count': item.count} for item in top_destinos]
+
+    return render_template('relatorios.html', **context)
 
 @app.route('/administracao')
 def administracao():
@@ -385,6 +469,7 @@ def salvar_configuracao_robo():
     config.contato = request.form.get('contato')
     config.telefone = request.form.get('telefone')
     config.head_evento = 'head_evento' in request.form
+    config.modo_execucao = 'agendado' if 'modo_execucao' in request.form else 'teste'
     config.tempo_espera_segundos = request.form.get('tempo_espera_segundos', 30, type=int)
     
     db.session.commit()
@@ -544,6 +629,7 @@ def agendar(current_user):
     motorista_id = data.get('motorista_id')
     caminhao_id = data.get('caminhao_id')
     fertipar_item = data.get('fertipar_item')
+    carga_solicitada = data.get('carga_solicitada') # Captura o novo campo
 
     if not all([motorista_id, caminhao_id, fertipar_item]):
         return jsonify({'success': False, 'message': 'Todos os campos são obrigatórios: Motorista, Caminhão e Item Fertipar.'}), 400
@@ -570,7 +656,8 @@ def agendar(current_user):
             fertipar_pedido=fertipar_item.get('Pedido'),
             fertipar_destino=fertipar_item.get('Destino'),
             fertipar_data=fertipar_item.get('Data'),
-            fertipar_qtde=fertipar_item.get('Qtde.')
+            fertipar_qtde=fertipar_item.get('Qtde.'),
+            carga_solicitada=carga_solicitada # Salva o novo campo
         )
         db.session.add(nova_agenda)
         db.session.commit()
@@ -652,48 +739,98 @@ def get_caminhoes():
 
 @app.route('/api/scrape_fertipar_data', methods=['GET'])
 def api_scrape_fertipar_data():
-    # Retorna dados simulados, pois o robô Playwright não será implantado no Vercel neste momento.
-    mock_data = [
-        {"Protocolo": "12345", "Pedido": "P001", "Data": "10/01/2026", "Situacao": "Disponível", "Destino": "Porto Alegre", "Qtde.": "10 ton", "Embalagem": "Saco", "Cotacao": "R$ 100/ton", "ObservacaoCotacao": "Urgente"},
-        {"Protocolo": "67890", "Pedido": "P002", "Data": "11/01/2026", "Situacao": "Pendente", "Destino": "Caxias do Sul", "Qtde.": "15 ton", "Embalagem": "Granel", "Cotacao": "R$ 90/ton", "ObservacaoCotacao": "Sem pressa"},
-        {"Protocolo": "11223", "Pedido": "P003", "Data": "12/01/2026", "Situacao": "Disponível", "Destino": "Santa Cruz do Sul", "Qtde.": "5 ton", "Embalagem": "Saco", "Cotacao": "R$ 110/ton", "ObservacaoCotacao": ""},
-    ]
-    return jsonify({"success": True, "data": mock_data})
+    simulate_error = request.args.get('simulate') == 'error'
+
+    try:
+        if simulate_error:
+            # Simula um erro de execução (ex: falha de conexão, erro no robô)
+            raise ConnectionError("Simulação de falha de conexão com o site da Fertipar.")
+
+        # Em um cenário real, aqui estaria a chamada para o robô de scraping.
+        # Como o robô não está implantado, retornamos uma lista vazia para
+        # indicar que a busca foi bem-sucedida, mas não encontrou dados.
+        scraped_data = [] 
+        
+        return jsonify({"success": True, "data": scraped_data})
+
+    except Exception as e:
+        # Log do erro no servidor para depuração
+        app.logger.error(f"Erro na api_scrape_fertipar_data: {e}")
+        
+        # Retorna uma resposta de erro padronizada para o frontend
+        return jsonify({
+            "success": False, 
+            "message": "Não foi possível buscar os dados da Fertipar. O serviço pode estar offline ou indisponível."
+        }), 503 # Service Unavailable
 
 @app.route('/api/agendas_em_espera', methods=['GET'])
 def api_agendas_em_espera():
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
-def setup_database(app):
-    with app.app_context():
-        # db.create_all() # No longer needed with Flask-Migrate
-        # Create a default user if none exists
-        if not Usuario.query.first():
-            default_user = Usuario(username='admin', nome='Administrador', email='admin@example.com', role='admin')
-            default_user.set_password('admin')
-            db.session.add(default_user)
-            db.session.commit()
-            print("Default user 'admin' with password 'admin' created.")
-
-@app.errorhandler(OperationalError)
-def handle_db_connection_error(e):
-    # Log o erro detalhado para depuração no servidor
-    app.logger.error(f"Erro de conexão com o banco de dados: {e}")
+@app.route('/dashboard_decisao')
+def dashboard_decisao():
+    if 'user_id' not in session:
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login'))
     
-    # Verifica se a requisição é para uma API (espera JSON)
-    if request.path.startswith('/api/'):
-        return jsonify({
-            "error": "Erro de Serviço",
-            "message": "Não foi possível estabelecer comunicação com o banco de dados."
-        }), 503 # Service Unavailable
-        
-    # Para requisições de página web, usa flash e redireciona
-    flash('Não foi possível conectar ao banco de dados. Verifique as credenciais ou o status do servidor.', 'danger')
-    return redirect(url_for('login'))
+    # KPIs Gerais
+    total_motoristas = Motorista.query.count()
+    total_caminhoes = Caminhao.query.count()
+    total_agendamentos = Agenda.query.count()
 
+    # Agendamentos por Mês (Atual e Anterior)
+    hoje = datetime.now()
+    
+    # Mês atual
+    primeiro_dia_mes_atual = hoje.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    agendamentos_mes_atual = Agenda.query.filter(Agenda.data_agendamento >= primeiro_dia_mes_atual).count()
 
-if __name__ == '__main__':
-    # A configuração do banco de dados agora é gerenciada pelo Flask-Migrate.
-    # A linha db.create_all() foi removida para evitar conflitos.
-    app.run(debug=True)
+    # Mês anterior
+    primeiro_dia_mes_anterior = (hoje.replace(day=1) - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    agendamentos_mes_anterior = Agenda.query.filter(
+        Agenda.data_agendamento >= primeiro_dia_mes_anterior,
+        Agenda.data_agendamento < primeiro_dia_mes_atual
+    ).count()
+
+    # Tendência (Mês atual vs Mês anterior)
+    tendencia_agendamentos = 0
+    if agendamentos_mes_anterior > 0:
+        tendencia_agendamentos = ((agendamentos_mes_atual - agendamentos_mes_anterior) / agendamentos_mes_anterior) * 100
+
+    # Top 5 Motoristas por Agendamentos
+    top_motoristas = db.session.query(
+        Motorista.nome,
+        db.func.count(Agenda.id).label('total_agendamentos')
+    ).join(Agenda).group_by(Motorista.nome).order_by(db.func.count(Agenda.id).desc()).limit(5).all()
+
+    # Top 5 Destinos por Agendamentos
+    top_destinos = db.session.query(
+        Agenda.fertipar_destino,
+        db.func.count(Agenda.id).label('total_agendamentos')
+    ).group_by(Agenda.fertipar_destino).order_by(db.func.count(Agenda.id).desc()).limit(5).all()
+
+    # Agendamentos nos últimos 12 meses para gráfico de tendência
+    data_12_meses_atras = (hoje - timedelta(days=365)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    agendamentos_ultimos_12_meses = db.session.query(
+        db.func.to_char(Agenda.data_agendamento, 'YYYY-MM').label('mes'),
+        db.func.count(Agenda.id).label('total')
+    ).filter(Agenda.data_agendamento >= data_12_meses_atras).group_by('mes').order_by('mes').all()
+
+    agendamentos_12m_labels = [item.mes for item in agendamentos_ultimos_12_meses]
+    agendamentos_12m_data = [item.total for item in agendamentos_ultimos_12_meses]
+
+    context = {
+        'total_motoristas': total_motoristas,
+        'total_caminhoes': total_caminhoes,
+        'total_agendamentos': total_agendamentos,
+        'agendamentos_mes_atual': agendamentos_mes_atual,
+        'agendamentos_mes_anterior': agendamentos_mes_anterior,
+        'tendencia_agendamentos': round(tendencia_agendamentos, 2),
+        'top_motoristas': top_motoristas,
+        'top_destinos': top_destinos,
+        'agendamentos_12m_labels': agendamentos_12m_labels,
+        'agendamentos_12m_data': agendamentos_12m_data
+    }
+    
+    return render_template('dashboard_decisao.html', **context)

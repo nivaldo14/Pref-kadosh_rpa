@@ -78,18 +78,40 @@
             <div class="card-header"><h3 class="card-title mb-0">Configurações do Robô de Automação</h3></div>
             <div class="card-body">
                 <form action="{{ url_for('salvar_configuracao_robo') }}" method="post">
-                    <div class="form-row mb-4"> <!-- Adicionado mb-4 para espaçamento -->
-                        <div class="form-group col-md-12"> <!-- Ocupa a largura total para destaque -->
-                            <p class="text-sm font-medium text-gray-700 mb-2">Status do Evento Header do Robô:</p>
+                    <div class="form-row mb-3">
+                        <!-- Switch 1: Head Evento -->
+                        <div class="form-group col-md-6">
+                            <p class="text-sm font-medium text-gray-700 mb-2">
+                                Status do Evento Header do Robô:
+                                <span class="ml-2" data-toggle="tooltip" data-placement="top" title="On (Verde): Será mostrado em tela todos os eventos do bot. Off: Os eventos serão em background, liberando o seu terminal para ser utilizado.">
+                                    <i class="fas fa-question-circle text-muted"></i>
+                                </span>
+                            </p>
                             <div class="custom-control custom-switch custom-control-lg">
-                                <input type="checkbox" class="custom-control-input" id="head_evento" name="head_evento" {% if configuracao.head_evento %}checked{% endif %}>
+                                <input type="checkbox" class="custom-control-input" id="head_evento" name="head_evento" {% if configuracao and configuracao.head_evento %}checked{% endif %}>
                                 <label class="custom-control-label custom-switch-label" for="head_evento">
                                     <span class="switch-label-text"></span>
                                 </label>
                             </div>
                         </div>
+
+                        <!-- Switch 2: Modo de Execução -->
+                        <div class="form-group col-md-6">
+                            <p class="text-sm font-medium text-gray-700 mb-2">
+                                Modo de Execução do Robô:
+                                <span class="ml-2" data-toggle="tooltip" data-placement="top" title="On (Agendado): O robô executará as tarefas conforme o agendamento pré-definido. Off (Teste): O robô executará apenas eventos de teste sob demanda, sem criar agendamentos.">
+                                    <i class="fas fa-question-circle text-muted"></i>
+                                </span>
+                            </p>
+                            <div class="custom-control custom-switch custom-control-lg">
+                                <input type="checkbox" class="custom-control-input" id="modo_execucao" name="modo_execucao" {% if configuracao and configuracao.modo_execucao == 'agendado' %}checked{% endif %}>
+                                <label class="custom-control-label custom-switch-label" for="modo_execucao">
+                                    <span class="switch-label-text"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <h5 class="mb-3 mt-2 text-primary">Acesso e Credenciais</h5>
+                    <h5 class="mb-3 mt-4 text-primary">Acesso e Credenciais</h5>
                     <div class="form-row">
                         <div class="form-group col-md-4"><label for="url_acesso">Pagina RPA</label><input type="url" class="form-control form-control-sm" id="url_acesso" name="url_acesso" value="{{ configuracao.url_acesso if configuracao else '' }}" required></div>
                         <div class="form-group col-md-4"><label for="usuario_site">Usuario RPA</label><input type="text" class="form-control form-control-sm" id="usuario_site" name="usuario_site" value="{{ configuracao.usuario_site if configuracao else '' }}" required></div>
@@ -98,20 +120,23 @@
                     <div class="form-row">
                         <div class="form-group col-md-4"><label for="filial">Filial</label><input type="text" class="form-control form-control-sm" id="filial" name="filial" value="{{ configuracao.filial if configuracao else '' }}" required></div>
                     </div>
-                    <hr>
-                    <h5 class="mb-3 mt-3 text-primary">Configurações Adicionais</h5>
+                                        <hr>
+                                        <h5 class="mb-3 mt-3 text-primary">Configurações Adicionais</h5>
                                         <div class="form-row">
-                        <div class="form-group col-md-8"><label for="pagina_raspagem">Página de Raspagem</label><input type="url" class="form-control form-control-sm" id="pagina_raspagem" name="pagina_raspagem" value="{{ configuracao.pagina_raspagem if configuracao else '' }}"></div>
-                        <div class="form-group col-md-4"><label for="email_retorno">E-mail de Retorno</label><input type="email" class="form-control form-control-sm" id="email_retorno" name="email_retorno" value="{{ configuracao.email_retorno if configuracao else '' }}" required></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label for="tempo_espera_segundos">Tempo de Espera (segundos)</label>
-                            <input type="number" class="form-control form-control-sm" id="tempo_espera_segundos" name="tempo_espera_segundos" value="{{ configuracao.tempo_espera_segundos if configuracao else 30 }}" min="0">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-save mr-2"></i>Salvar Configurações</button>
-                </form>
+                                            <div class="form-group col-md-4"><label for="contato">Contato</label><input type="text" class="form-control form-control-sm" id="contato" name="contato" value="{{ configuracao.contato if configuracao else '' }}"></div>
+                                            <div class="form-group col-md-4"><label for="robo-telefone">Telefone</label><input type="text" class="form-control form-control-sm" id="robo-telefone" name="telefone" value="{{ configuracao.telefone if configuracao else '' }}"></div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8"><label for="pagina_raspagem">Página de Raspagem</label><input type="url" class="form-control form-control-sm" id="pagina_raspagem" name="pagina_raspagem" value="{{ configuracao.pagina_raspagem if configuracao else '' }}"></div>
+                                            <div class="form-group col-md-4"><label for="email_retorno">E-mail de Retorno</label><input type="email" class="form-control form-control-sm" id="email_retorno" name="email_retorno" value="{{ configuracao.email_retorno if configuracao else '' }}" required></div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="tempo_espera_segundos">Tempo de Espera (segundos)</label>
+                                                <input type="number" class="form-control form-control-sm" id="tempo_espera_segundos" name="tempo_espera_segundos" value="{{ configuracao.tempo_espera_segundos if configuracao else 30 }}" min="0">
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-success mt-3"><i class="fas fa-save mr-2"></i>Salvar Configurações</button>                </form>
             </div>
         </div>
     </div>
@@ -137,23 +162,36 @@
 {% block scripts %}
     {{ super() }}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const headEventoSwitch = document.getElementById('head_evento');
-            const switchLabelText = headEventoSwitch.nextElementSibling.querySelector('.switch-label-text');
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip()
+        })
 
-            function updateSwitchLabel() {
-                if (headEventoSwitch.checked) {
-                    switchLabelText.textContent = 'Evento Header do Robo ativo';
-                } else {
-                    switchLabelText.textContent = 'Evento Header do Robo Desativado';
+        document.addEventListener('DOMContentLoaded', function() {
+            // Helper function to update switch labels
+            function setupSwitch(switchId, onText, offText) {
+                const switchElement = document.getElementById(switchId);
+                if (!switchElement) return;
+
+                const labelTextElement = switchElement.nextElementSibling.querySelector('.switch-label-text');
+
+                function updateLabel() {
+                    if (switchElement.checked) {
+                        labelTextElement.textContent = onText;
+                    } else {
+                        labelTextElement.textContent = offText;
+                    }
                 }
+
+                // Initial update and event listener
+                updateLabel();
+                switchElement.addEventListener('change', updateLabel);
             }
 
-            // Initial update
-            updateSwitchLabel();
+            // Setup for the first switch
+            setupSwitch('head_evento', 'Exibição de eventos na tela Ativada', 'Exibição de eventos na tela Desativada');
 
-            // Update on change
-            headEventoSwitch.addEventListener('change', updateSwitchLabel);
+            // Setup for the second switch
+            setupSwitch('modo_execucao', 'Modo Agendado Ativo', 'Modo de Teste Ativo');
         });
     </script>
 {% endblock %}

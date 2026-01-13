@@ -7,3 +7,4 @@ reset_password.py
 *.sql
 /errsis/*.*
 /instalacao/*.*
+melhorias.md
