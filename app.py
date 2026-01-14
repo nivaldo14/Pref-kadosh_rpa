@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import sys
 from datetime import datetime
+import json
 
 # Adiciona o diretório 'backend' ao sys.path para importações relativas
 # Isso é necessário se 'app.py' é executado diretamente de 'front/'
@@ -19,7 +20,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
-import pprint
 
 
 import os
@@ -200,12 +200,22 @@ def inject_user():
         return dict(user=user)
     return dict(user=None)
 
+@app.context_processor
+def inject_configuracao_robo():
+    # Isso pode retornar None se a tabela estiver vazia, o template precisa lidar com isso.
+    config = ConfiguracaoRobo.query.first()
+    return dict(configuracao_robo=config)
+
 @app.route('/')
 def index():
     return redirect(url_for('cadastros'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Gerar a string de versão
+    now = datetime.now()
+    app_version = now.strftime("01.%y%m%d%H%M") # %y para ano com 2 dígitos
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -227,7 +237,7 @@ def login():
             return redirect(url_for('cadastros'))
         else:
             flash('Usuário ou senha inválidos.', 'danger')
-    return render_template('login.html')
+    return render_template('login.html', app_version=app_version)
 
 @app.route('/logout')
 def logout():
@@ -772,13 +782,50 @@ def api_agendas_em_espera():
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
-@app.route('/api/teste_robo', methods=['POST'])
-def teste_robo():
-    data = request.get_json()
-    print("\n--- DADOS RECEBIDOS DO TESTE DO ROBÔ ---")
-    pprint.pprint(data)
-    print("----------------------------------------\n")
-    return jsonify({'success': True, 'message': 'Dados recebidos e impressos no console do servidor.'})
+@app.route('/api/teste_robo_config', methods=['POST'])
+@token_required
+def teste_robo_config(current_user):
+    try:
+        # Recebe os dados JSON do corpo da requisição
+        request_data = request.get_json()
+        select_data_from_frontend = request_data.get('select_data')
+
+        # Busca a configuração do robô no banco de dados
+        configuracao_db = ConfiguracaoRobo.query.first()
+        if not configuracao_db:
+            return jsonify({'success': False, 'message': 'Configuração do robô não encontrada.'}), 404
+
+        # Converte o objeto ConfiguracaoRobo para um dicionário
+        config_data = {
+            'url_acesso': configuracao_db.url_acesso,
+            'filial': configuracao_db.filial,
+            'usuario_site': configuracao_db.usuario_site,
+            'senha_site': configuracao_db.senha_site, # Cuidado com logs de senhas em produção!
+            'email_retorno': configuracao_db.email_retorno,
+            'pagina_raspagem': configuracao_db.pagina_raspagem,
+            'contato': configuracao_db.contato,
+            'telefone': configuracao_db.telefone,
+            'head_evento': configuracao_db.head_evento,
+            'tempo_espera_segundos': configuracao_db.tempo_espera_segundos,
+            'modo_execucao': configuracao_db.modo_execucao
+        }
+
+        # Unifica os dois JSONs em um único objeto para impressão
+        unified_json = {
+            'configuracao_robo': config_data,
+            'dados_formulario': select_data_from_frontend
+        }
+
+        # Imprime o JSON unificado no console do servidor Flask
+        print("\n--- JSON UNIFICADO DE DADOS PARA ANÁLISE ---")
+        print(json.dumps(unified_json, indent=2))
+        print("---------------------------------------------")
+
+        return jsonify({'success': True, 'message': 'JSON unificado de dados impresso no console do servidor.'})
+
+    except Exception as e:
+        print(f"Erro ao testar a configuração do robô: {e}")
+        return jsonify({'success': False, 'message': f'Erro interno do servidor: {str(e)}'}), 500
 
 @app.route('/dashboard_decisao')
 def dashboard_decisao():
@@ -846,3 +893,4 @@ def dashboard_decisao():
     }
     
     return render_template('dashboard_decisao.html', **context)
+

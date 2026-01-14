@@ -95,7 +95,16 @@
     <!-- Seção Gerar Agenda -->
     <div class="tab-pane fade {% if active_tab == 'gerar-agenda' %}show active{% endif %}" id="gerar-agenda" role="tabpanel" aria-labelledby="gerar-agenda-tab">
         <div class="card mt-4">
-            <div class="card-header"><h3 class="card-title mb-0">Gerar Nova Agenda</h3></div>
+            <div class="card-header">
+                <h3 class="card-title mb-0 d-inline-block">Gerar Nova Agenda</h3>
+                {% if configuracao_robo %}
+                    {% if configuracao_robo.modo_execucao == 'teste' %}
+                        <span class="badge badge-warning ml-2"><i class="fas fa-exclamation-triangle mr-1"></i>MODO TESTE</span>
+                    {% else %}
+                        <span class="badge badge-success ml-2"><i class="fas fa-check-circle mr-1"></i>MODO AGENDAMENTO</span>
+                    {% endif %}
+                {% endif %}
+            </div>
             <div class="card-body">
                 <form id="form-gerar-agenda">
                     <input type="hidden" name="motorista_id" id="hidden-motorista-id">
@@ -130,7 +139,7 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label for="peso-carregar">Peso a Carregar (Ton)</label>
-                                <input type="number" name="peso_carregar" id="peso-carregar" class="form-control form-control-sm" step="0.01" min="0">
+                                <input type="number" name="peso_carregar" id="peso-carregar" class="form-control form-control-sm" step="0.001" min="0" max="999.999">
                             </div>
                         </div>
                     </div>
@@ -142,6 +151,7 @@
                     <hr>
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check mr-2"></i>Agendar</button>
+                        <button type="button" id="teste-robo-btn" class="btn btn-info ml-2"><i class="fas fa-vial mr-2"></i>Teste Robô</button>
                         <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#fertiparModal"><i class="fas fa-file-alt mr-2"></i>Dados Fertipar</button>
                     </div>
                 </form>
@@ -267,11 +277,80 @@
 
 
 {% block scripts %}
+{{ super() }}
 <script>
-    // Pega o token JWT injetado pelo Flask e o armazena no localStorage.
-    const jwtToken = "{{ jwt_token or '' }}";
-    if (jwtToken) {
-        localStorage.setItem('jwt_token', jwtToken);
+    // Pega o token JWT injetado pelo Flask e o armazena no localStorage assim que a página carrega.
+    const jwtTokenFromFlask = "{{ jwt_token or '' }}";
+    if (jwtTokenFromFlask) {
+        localStorage.setItem('jwt_token', jwtTokenFromFlask);
+        console.log('Token JWT salvo no localStorage.'); // Adiciona um log para depuração
+    } else {
+        console.warn('Token JWT do Flask não encontrado na renderização da página.'); // Adiciona um log para depuração
     }
+
+    $(document).ready(function() {
+        $(document).on('click', '#teste-robo-btn', function() {
+            console.log('Botão "Teste Robô" clicado (via jQuery).');
+
+            const jwtToken = localStorage.getItem('jwt_token');
+            if (!jwtToken) {
+                toastr.error('Erro de autenticação: Token não encontrado. Por favor, faça login novamente.');
+                return;
+            }
+
+            // Coletar dados dos selects de motorista e caminhão
+            const motoristaSelect = document.getElementById('agenda-motorista-select');
+            const caminhaoSelect = document.getElementById('agenda-caminhao-select');
+            const selectedMotoristaOption = motoristaSelect ? motoristaSelect.options[motoristaSelect.selectedIndex] : null;
+            const selectedCaminhaoOption = caminhaoSelect ? caminhaoSelect.options[caminhaoSelect.selectedIndex] : null;
+
+            const selectData = {
+                motorista: {
+                    id: selectedMotoristaOption ? selectedMotoristaOption.value : null,
+                    nome: selectedMotoristaOption ? selectedMotoristaOption.text : null,
+                    // Usando o spread operator (...) para pegar todos os data-attributes
+                    ...(selectedMotoristaOption ? selectedMotoristaOption.dataset : {})
+                },
+                caminhao: {
+                    id: selectedCaminhaoOption ? selectedCaminhaoOption.value : null,
+                    placa_display: selectedCaminhaoOption ? selectedCaminhaoOption.text : null, // O texto da opção é a placa
+                    // Usando o spread operator (...) para pegar todos os data-attributes
+                    ...(selectedCaminhaoOption ? selectedCaminhaoOption.dataset : {})
+                },
+                outros_dados: {
+                    peso_a_carregar: document.getElementById('peso-carregar').value,
+                    contrato: '', // Valor vazio, será preenchido por outra fonte no futuro
+                    pedido: ''    // Valor vazio, será preenchido por outra fonte no futuro
+                }
+            };
+            
+            fetch('/api/teste_robo_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + jwtToken
+                },
+                body: JSON.stringify({ select_data: selectData }) // Envia os dados dos selects para o backend
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || 'Erro no servidor') });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Resposta do servidor:', data);
+                if (data.success) {
+                    toastr.success(data.message || 'Comando enviado. Verifique o console do servidor.');
+                } else {
+                    // O erro já foi lançado e será pego pelo .catch
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                toastr.error(error.message || 'Erro de comunicação ao testar o robô.');
+            });
+        });
+    });
 </script>
 {% endblock %}
