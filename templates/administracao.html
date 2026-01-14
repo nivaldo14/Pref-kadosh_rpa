@@ -11,12 +11,12 @@
     <ul class="nav nav-pills" id="adminTab" role="tablist">
         {% if session.get('user_role') == 'admin' %}
         <li class="nav-item">
-            <a class="nav-link active" id="usuarios-tab" data-toggle="tab" href="#usuarios" role="tab" aria-controls="usuarios" aria-selected="true">
+            <a class="nav-link" id="usuarios-tab" data-toggle="tab" href="#usuarios" role="tab" aria-controls="usuarios" aria-selected="true">
                 <i class="fas fa-users mr-2"></i>Usuários
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" id="configuracoes-tab" data-toggle="tab" href="#configuracoes" role="tab" aria-controls="configuracoes" aria-selected="false">
+            <a class="nav-link active" id="configuracoes-tab" data-toggle="tab" href="#configuracoes" role="tab" aria-controls="configuracoes" aria-selected="false">
                 <i class="fas fa-robot mr-2"></i>Configurações do Robô
             </a>
         </li>
@@ -37,7 +37,7 @@
 <div class="tab-content" id="adminTabContent">
     {% if session.get('user_role') == 'admin' %}
     <!-- Seção de Usuários -->
-    <div class="tab-pane fade show active" id="usuarios" role="tabpanel" aria-labelledby="usuarios-tab">
+    <div class="tab-pane fade" id="usuarios" role="tabpanel" aria-labelledby="usuarios-tab">
         <div class="card mt-4">
             <div class="card-header"><h3 class="card-title mb-0">Adicionar Novo Usuário</h3></div>
             <div class="card-body">
@@ -73,7 +73,7 @@
     </div>
 
     <!-- Seção de Configurações do Robô -->
-    <div class="tab-pane fade" id="configuracoes" role="tabpanel" aria-labelledby="configuracoes-tab">
+    <div class="tab-pane fade show active" id="configuracoes" role="tabpanel" aria-labelledby="configuracoes-tab">
         <div class="card mt-4">
             <div class="card-header"><h3 class="card-title mb-0">Configurações do Robô de Automação</h3></div>
             <div class="card-body">
@@ -136,7 +136,9 @@
                                                 <input type="number" class="form-control form-control-sm" id="tempo_espera_segundos" name="tempo_espera_segundos" value="{{ configuracao.tempo_espera_segundos if configuracao else 30 }}" min="0">
                                             </div>
                                         </div>
-                                        <button type="submit" class="btn btn-success mt-3"><i class="fas fa-save mr-2"></i>Salvar Configurações</button>                </form>
+                                        <button type="submit" class="btn btn-success mt-3"><i class="fas fa-save mr-2"></i>Salvar Configurações</button>
+                                        <button type="button" id="teste-robo-btn" class="btn btn-info mt-3 ml-2"><i class="fas fa-vial mr-2"></i>Teste Robô</button>
+                </form>
             </div>
         </div>
     </div>
@@ -167,6 +169,18 @@
         })
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Helper to get JWT token
+            function getAuthHeaders() {
+                const token = localStorage.getItem('jwt_token');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                return headers;
+            }
+            
             // Helper function to update switch labels
             function setupSwitch(switchId, onText, offText) {
                 const switchElement = document.getElementById(switchId);
@@ -192,6 +206,46 @@
 
             // Setup for the second switch
             setupSwitch('modo_execucao', 'Modo Agendado Ativo', 'Modo de Teste Ativo');
+
+            // Botão de Teste Robô
+            const testeRoboBtn = document.getElementById('teste-robo-btn');
+            if (testeRoboBtn) {
+                testeRoboBtn.addEventListener('click', async function() {
+                    const form = this.closest('form');
+                    const configData = {
+                        head_evento: form.querySelector('#head_evento').checked,
+                        modo_execucao: form.querySelector('#modo_execucao').checked ? 'agendado' : 'teste',
+                        url_acesso: form.querySelector('#url_acesso').value,
+                        usuario_site: form.querySelector('#usuario_site').value,
+                        senha_site: form.querySelector('#senha_site').value,
+                        filial: form.querySelector('#filial').value,
+                        contato: form.querySelector('#contato').value,
+                        telefone: form.querySelector('#robo-telefone').value,
+                        pagina_raspagem: form.querySelector('#pagina_raspagem').value,
+                        email_retorno: form.querySelector('#email_retorno').value,
+                        tempo_espera_segundos: form.querySelector('#tempo_espera_segundos').value
+                    };
+
+                    try {
+                        const response = await fetch('/api/teste_robo', {
+                            method: 'POST',
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify(configData),
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            toastr.success('Dados de teste enviados para o console do servidor com sucesso!');
+                        } else {
+                            toastr.error('Erro ao enviar dados de teste: ' + (result.message || 'Erro desconhecido'));
+                        }
+                    } catch (error) {
+                        console.error('Erro ao enviar dados de teste:', error);
+                        toastr.error('Erro de conexão ao enviar dados de teste.');
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}

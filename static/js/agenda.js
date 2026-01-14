@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
         agendasEmEsperaBody.innerHTML = ''; // Limpa o conteúdo atual da tabela
 
         if (agendas.length === 0) {
-            agendasEmEsperaBody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhuma agenda em espera.</td></tr>'; // Colspan ajustado para 8
+            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda em espera.</td></tr>'; // Colspan ajustado para 9
             return;
         }
 
@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${agenda.protocolo}</td>
                 <td>${agenda.pedido}</td>
                 <td>${agenda.destino}</td>
+                <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td> <!-- Display new field -->
                 <td><span class="badge badge-warning">${agenda.status}</span></td>
                 <td>
                     <button class="btn btn-sm btn-info" title="Iniciar"><i class="fas fa-play"></i></button>
@@ -418,6 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const motoristaId = hiddenMotoristaId.value;
             const caminhaoId = hiddenCaminhaoId.value;
             const fertiparItemJson = hiddenFertiparItemJson.value;
+            const pesoCarregar = document.getElementById('peso-carregar').value; // Coleta o valor do novo campo
 
             if (!motoristaId || !caminhaoId || !fertiparItemJson) {
                 showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning');
@@ -427,7 +429,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = {
                 motorista_id: motoristaId,
                 caminhao_id: caminhaoId,
-                fertipar_item: JSON.parse(fertiparItemJson) // Parsear a string JSON para um objeto
+                fertipar_item: JSON.parse(fertiparItemJson), // Parsear a string JSON para um objeto
+                peso_carregar: parseFloat(pesoCarregar) || 0 // Adiciona o peso a carregar, convertendo para float
             };
 
             try {

@@ -19,6 +19,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
+import pprint
 
 
 import os
@@ -186,7 +187,8 @@ class Agenda(db.Model):
             'pedido': self.fertipar_pedido,  # Adicionando o campo pedido
             'destino': self.fertipar_destino,
             'status': self.status,
-            'data_agendamento': self.data_agendamento.strftime('%d/%m/%Y %H:%M')
+            'data_agendamento': self.data_agendamento.strftime('%d/%m/%Y %H:%M'),
+            'carga_solicitada': float(self.carga_solicitada) if self.carga_solicitada else None # Adicionar carga_solicitada
         }
 
 # --- Routes ---
@@ -370,11 +372,12 @@ def administracao():
         flash('Você não tem permissão para acessar esta página.', 'danger')
         return redirect(url_for('cadastros'))
     
-    tab = request.args.get('tab', 'usuarios')
-    if session.get('user_role') != 'admin':
-        tab = 'historico-robo'
-
-
+    # Determine the default tab based on user role
+    if session.get('user_role') == 'admin':
+        tab = request.args.get('tab', 'configuracoes') # Default to 'configuracoes' for admin
+    else:
+        tab = request.args.get('tab', 'historico-robo') # Default to 'historico-robo' for non-admin
+    
     usuarios = Usuario.query.all()
     configuracao = ConfiguracaoRobo.query.first() # Should only be one
     
@@ -768,6 +771,14 @@ def api_scrape_fertipar_data():
 def api_agendas_em_espera():
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
+
+@app.route('/api/teste_robo', methods=['POST'])
+def teste_robo():
+    data = request.get_json()
+    print("\n--- DADOS RECEBIDOS DO TESTE DO ROBÔ ---")
+    pprint.pprint(data)
+    print("----------------------------------------\n")
+    return jsonify({'success': True, 'message': 'Dados recebidos e impressos no console do servidor.'})
 
 @app.route('/dashboard_decisao')
 def dashboard_decisao():
