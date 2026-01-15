@@ -15,10 +15,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-left">
-                        <h3 class="font-weight-bold">{{ total_motoristas }}</h3>
+                        <h4 class="font-weight-bold">{{ total_motoristas }}</h3>
                         <p class="mb-0">Motoristas Registrados</p>
                     </div>
-                    <i class="fas fa-users fa-3x"></i>
+                    <i class="fas fa-users fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -28,10 +28,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-left">
-                        <h3 class="font-weight-bold">{{ total_caminhoes }}</h3>
+                        <h4 class="font-weight-bold">{{ total_caminhoes }}</h3>
                         <p class="mb-0">Caminhões Registrados</p>
                     </div>
-                    <i class="fas fa-truck fa-3x"></i>
+                    <i class="fas fa-truck fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -41,10 +41,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-left">
-                        <h3 class="font-weight-bold">{{ total_agendamentos }}</h3>
+                        <h4 class="font-weight-bold">{{ total_agendamentos }}</h3>
                         <p class="mb-0">Agendamentos Totais</p>
                     </div>
-                    <i class="fas fa-calendar-alt fa-3x"></i>
+                    <i class="fas fa-calendar-alt fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -54,7 +54,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-left">
-                        <h3 class="font-weight-bold">
+                        <h4 class="font-weight-bold">
                             {{ agendamentos_mes_atual }}
                             {% if tendencia_agendamentos is not none and tendencia_agendamentos != 0 %}
                                 {% if tendencia_agendamentos > 0 %}
@@ -66,7 +66,7 @@
                         </h3>
                         <p class="mb-0">Agendamentos Mês Atual</p>
                     </div>
-                    <i class="fas fa-chart-line fa-3x"></i>
+                    <i class="fas fa-chart-line fa-2x"></i>
                 </div>
                 <small class="card-text">Mês anterior: {{ agendamentos_mes_anterior }}</small>
             </div>
@@ -76,10 +76,10 @@
 
 <div class="row">
     <!-- Gráfico de Tendência de Agendamentos (Últimos 12 Meses) -->
-    <div class="col-md-12 mb-4">
+    <div class="col-md-5 mx-auto mb-4">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Tendência de Agendamentos (Últimos 12 Meses)</h5>
+                <h6 class="mb-0">Tendência de Agendamentos (Últimos 12 Meses)</h5>
             </div>
             <div class="card-body">
                 <canvas id="agendamentosTendenciaChart"></canvas>
@@ -93,7 +93,7 @@
     <div class="col-md-6 mb-4">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">Top 5 Motoristas por Agendamentos</h5>
+                <h6 class="mb-0">Top 5 Motoristas por Agendamentos</h5>
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
@@ -114,7 +114,7 @@
     <div class="col-md-6 mb-4">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">Top 5 Destinos por Agendamentos</h5>
+                <h6 class="mb-0">Top 5 Destinos por Agendamentos</h5>
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
