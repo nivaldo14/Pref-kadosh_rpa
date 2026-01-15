@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Conexão Socket.IO ---
+    const socket = io();
+
+    socket.on('connect', function() {
+        console.log('Conectado ao servidor Socket.IO!');
+    });
+
+    socket.on('status_update', function(data) {
+        console.log('Status update received:', data);
+        toastr.info(`A agenda para o protocolo ${data.protocolo} foi atualizada para: ${data.status}`);
+        fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
+    });
+
     // --- Seletores de Elementos ---
     const motoristaSelect = document.getElementById('agenda-motorista-select');
     const motoristaInfoDiv = document.getElementById('agenda-motorista-info');
@@ -43,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('pt-BR', options);
     }
     
-    function showAlert(message, type = 'info') {
+    function showAlert(message, type = 'info', isFixed = false) {
         toastr.options = {
             "closeButton": true,
             "debug": false,
@@ -67,8 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
             type = 'warning'; // Usa o tipo 'aviso' (amarelo)
         } else if (type === 'danger') {
             toastr.options.timeOut = 0; // Erros reais também ficam visíveis
-        } else {
-            toastr.options.timeOut = 5000; // 5 segundos para outros tipos (sucesso, info)
+        } else if (isFixed) {
+            toastr.options.timeOut = 0; // Fixed toast
+            toastr.options.extendedTimeOut = 0;
+        }
+        else {
+            toastr.options.timeOut = 5000; // 5 segundos para outros tipos (success, info)
         }
 
         const toastrType = type === 'danger' ? 'error' : type;
@@ -132,10 +149,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         agendas.forEach(agenda => {
             const row = agendasEmEsperaBody.insertRow();
+            
+            // Formata as informações do caminhão a partir do objeto
+            let caminhaoDisplay = agenda.caminhao.placa;
+            if (agenda.caminhao.tipo_carroceria) {
+                caminhaoDisplay += ` - ${agenda.caminhao.tipo_carroceria}`;
+            }
+            if (agenda.caminhao.reboques && agenda.caminhao.reboques.length > 0) {
+                caminhaoDisplay += ` | ${agenda.caminhao.reboques.join(', ')}`;
+            }
+
             row.innerHTML = `
                 <td>${agenda.data_agendamento}</td>
                 <td>${agenda.motorista}</td>
-                <td>${agenda.caminhao}</td>
+                <td>${caminhaoDisplay}</td>
                 <td>${agenda.protocolo}</td>
                 <td>${agenda.pedido}</td>
                 <td>${agenda.destino}</td>
@@ -160,6 +187,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (content) {
             toastr.success(content, title);
+        }
+    }
+
+    async function rpaFert(agenda_data = null) {
+        toastr.info('Enviando comando de teste para o robô...');
+        try {
+            const response = await fetch('/api/rpa_fertipar_teste', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ agenda_data: agenda_data })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message || 'Comando de teste executado. Verifique o console do servidor.', 'success');
+            } else {
+                showAlert(result.message || 'Ocorreu um erro desconhecido durante o teste do robô.', 'danger');
+            }
+        } catch (error) {
+            console.error('Erro ao chamar rpaFert:', error);
+            showAlert('Erro de conexão ao tentar executar o teste do robô.', 'danger');
         }
     }
 
@@ -267,9 +316,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 row.innerHTML = `
                     <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid"><i class="fas fa-plus"></i></button></td>
                     <td><input type="checkbox" name="selecionar_item_modal" value="${index}"></td>
-                    <td>${item.Protocolo || ''}</td><td>${item.Pedido || ''}</td><td>${item.Data || ''}</td>
-                    <td>${item['Situação'] || ''}</td><td>${item.Destino || ''}</td><td>${item['Qtde.'] || ''}</td>
-                    <td>${item.Embalagem || ''}</td><td>${item['Cotação'] || ''}</td><td>${item['Observação Cotação'] || ''}</td>
+                    <td><strong>${item.Protocolo || ''}</strong></td>
+                    <td><strong>${item.Pedido || ''}</strong></td>
+                    <td>${item.Data || ''}</td>
+                    <td>${item['Situação'] || ''}</td>
+                    <td>${item.Destino || ''}</td>
+                    <td><strong>${item['Qtde.'] || ''}</strong></td>
+                    <td>${item.Embalagem || ''}</td>
+                    <td>${item['Cotação'] || ''}</td>
+                    <td>${item['Observação Cotação'] || ''}</td>
                 `;
 
                 // Subgrid row
@@ -278,28 +333,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 subgridRow.style.display = 'none'; // Esconder por padrão
                 subgridRow.innerHTML = `
                     <td colspan="11"> <!-- Colspan ajustado para cobrir todas as colunas + botão -->
-                        <div class="subgrid-content" style="width: 100%; display: flex; align-items: flex-end; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
-                            <div class="form-group col-md-2 custom-select-container">
+                        <div class="subgrid-content p-2 shadow-sm" style="width: 100%; display: flex; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                            <div class="form-group col-md-3 custom-select-container">
                                 <label for="motorista-subgrid-input-${index}">Motorista</label>
                                 <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
                                 <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
+                                <div class="selected-item-details mt-1"></div>
                             </div>
-                            <div class="form-group col-md-2 custom-select-container">
+                            <div class="form-group col-md-3 custom-select-container">
                                 <label for="caminhao-subgrid-input-${index}">Caminhão</label>
                                 <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
                                 <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
+                                <div class="selected-item-details mt-1"></div>
                             </div>
-                            <div class="form-group col-md-1">
+                            <div class="form-group col-md-2">
                                 <label for="carga-solicitada-input-${index}">Carga Sol.</label>
                                 <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton">
                             </div>
-                            <div class="form-group col-md-1">
+                            <div class="form-group col-md-2">
                                 <label>Status</label>
-                                <input type="text" class="form-control form-control-sm" value="" readonly>
+                                <input type="text" class="form-control form-control-sm subgrid-status" value="" readonly>
                             </div>
                             <div class="form-group col-md-1">
-                                <button type="button" class="btn btn-success btn-sm btn-agendar-subgrid">
-                                    <i class="fas fa-play mr-1"></i>Agendar
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid">
+                                    Agendar
                                 </button>
                             </div>
                         </div>
@@ -394,22 +452,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (fertiparModal) {
         $(fertiparModal).on('show.bs.modal', () => updateLastReadStatus());
+        
+        // Listener para o novo botão de dados fictícios
+        $('#btnDadosFicticios').on('click', function() {
+            const fictitiousData = [
+                { "Protocolo": "346562", "Pedido": "928580", "Data": "13/01/2026 10:21", "Situação": "APROVADO", "Destino": "BELA VISTA -MS", "Qtde.": "46.0", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "" },
+                { "Protocolo": "346512", "Pedido": "939686", "Data": "09/01/2026 16:32", "Situação": "APROVADO", "Destino": "COSTA RICA - MS", "Qtde.": "97.5", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "MINIMO MOTO RODO 247,64" },
+                { "Protocolo": "346445", "Pedido": "928580", "Data": "07/01/2026 13:27", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "280.0", "Observação Cotação": "MINIMO MOTO RODO 256,47" },
+                { "Protocolo": "346443", "Pedido": "928580", "Data": "07/01/2026 14:08", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "70.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346442", "Pedido": "928580", "Data": "07/01/2026 14:10", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "2.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346419", "Pedido": "938069", "Data": "05/01/2026 11:52", "Situação": "APROVADO", "Destino": "PARAISO DAS AGUAS - MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "320.0", "Observação Cotação": "MINIMO MOTO RODO 228,45" },
+                { "Protocolo": "346405", "Pedido": "928580", "Data": "13/01/2026 13:05", "Situação": "APROVADO", "Destino": "ANASTACIO - MS", "Qtde.": "35.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO 300,0" },
+                { "Protocolo": "346387", "Pedido": "926074", "Data": "04/12/2025 16:10", "Situação": "APROVADO", "Destino": "ALCINOPOLIS - MS", "Qtde.": "49.0", "Embalagem": "BIG-BAG", "Cotação": "300.0", "Observação Cotação": "MINIMO MOTO RODO 279,88" },
+                { "Protocolo": "346215", "Pedido": "939421", "Data": "07/01/2026 10:21", "Situação": "APROVADO", "Destino": "ROSANA-SP", "Qtde.": "72.0", "Embalagem": "BIG-BAG", "Cotação": "240.0", "Observação Cotação": "MINIMO MOTO BITREM 185,30" },
+                { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situação": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cotação": "620.0", "Observação Cotação": "" }
+            ];
+            
+            populateFertiparTable(fictitiousData);
+            toastr.info('Dados fictícios carregados na tabela.');
+
+            if(lastReadStatus) {
+                lastReadStatus.innerHTML = '<span class="text-warning font-weight-bold">Exibindo dados fictícios.</span>';
+            }
+            
+            $('#fertiparDataTableBody input[type="checkbox"]').prop('disabled', false);
+            $('#fertiparModal .filter-input').prop('disabled', false);
+            if (btnSaveFertipar) $(btnSaveFertipar).prop('disabled', false);
+        });
+
         // Lógica de filtragem
         $(fertiparModal).on('keyup', '.filter-input', function() {
-            const columnIndex = $(this).parent().index(); // Pega o índice da coluna do input
+            const columnIndex = $(this).parent().index(); 
             const filterValue = $(this).val().toLowerCase();
 
-            $('#fertiparDataTableBody tr').each(function() {
+            $('#fertiparDataTableBody tr.fertipar-main-row').each(function() {
                 const row = $(this);
                 const cell = row.find('td').eq(columnIndex);
                 const cellText = cell.text().toLowerCase();
+                const subgridRow = row.next('.fertipar-subgrid-row');
 
                 if (cellText.includes(filterValue)) {
                     row.show();
+                    // Não mexer no status do subgrid aqui para manter o estado (aberto/fechado)
                 } else {
                     row.hide();
+                    if(subgridRow.length > 0) {
+                        subgridRow.hide(); // Esconder subgrid associado se a linha principal for escondida
+                    }
                 }
             });
+        });
+
+        // Listener para o botão de teste do bot
+        $('#btnTesteBot').on('click', function() {
+            rpaFert();
+        });
+
+        // Listener para o botão Limpar Agendas
+        $('#btnLimparAgendas').on('click', async function() {
+            if (!confirm('Tem certeza que deseja limpar TODOS os agendamentos em espera? Esta ação é irreversível.')) {
+                return;
+            }
+
+            toastr.info('Limpando agendamentos...');
+            try {
+                const response = await fetch('/api/agendas/clear', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(result.message || 'Agendamentos limpos com sucesso!', 'success');
+                    fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Recarrega a lista de agendas em espera
+                } else {
+                    showAlert(result.message || 'Ocorreu um erro ao limpar os agendamentos.', 'danger');
+                }
+            } catch (error) {
+                console.error('Erro ao limpar agendamentos:', error);
+                showAlert('Erro de conexão ao tentar limpar os agendamentos.', 'danger');
+            }
         });
     }
 
@@ -417,12 +540,20 @@ document.addEventListener('DOMContentLoaded', function() {
         formGerarAgenda.addEventListener('submit', async function(event) {
             event.preventDefault(); // Previne o refresh da página
 
+            const pesoCarregarInput = document.getElementById('peso-carregar');
+            const pesoCarregar = parseFloat(pesoCarregarInput.value);
+
+            if (!pesoCarregar || pesoCarregar <= 0) {
+                showAlert('O campo "Peso a Carregar" é obrigatório e deve ser maior que zero.', 'warning');
+                pesoCarregarInput.focus();
+                return;
+            }
+
             // Coleta os dados do formulário
             const motoristaId = hiddenMotoristaId.value;
             const caminhaoId = hiddenCaminhaoId.value;
             const fertiparItemJson = hiddenFertiparItemJson.value;
-            const pesoCarregar = document.getElementById('peso-carregar').value; // Coleta o valor do novo campo
-
+            
             if (!motoristaId || !caminhaoId || !fertiparItemJson) {
                 showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning');
                 return;
@@ -451,18 +582,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (result.success) {
                     showAlert('Agenda criada com sucesso!', 'success');
-                    clearAgendaForm(); // Limpa os campos
                     
-                    // Pega o protocolo do item Fertipar agendado
                     const fertiparItem = JSON.parse(fertiparItemJson);
                     if (fertiparItem && fertiparItem.Protocolo) {
-                        disableFertiparCard(fertiparItem.Protocolo); // Bloqueia e risca o card
+                        disableFertiparCard(fertiparItem.Protocolo);
                     }
+                    
+                    rpaFert(result.agenda); // Chama a função rpaFert com os dados da nova agenda
+                    
+                    clearAgendaForm(); // Limpa os campos
 
-                    // Ativa a aba "Gerar Agenda"
+                    // Ativa a aba "Gerar Agenda" e recarrega a lista
                     $('[href="#gerar-agenda"]').tab('show'); 
-
-                    fetchAgendasEmEsperaData().then(agendas => renderAgendasEmEspera(agendas)); // Recarrega a lista de agendas em espera
+                    fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
                 } else {
                     showAlert('Erro ao criar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
                 }
@@ -473,16 +605,87 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (btnSaveFertipar) {
-        btnSaveFertipar.addEventListener('click', function() {
-            const selectedItemsData = [];
-            $('#fertiparDataTableBody tr').each(function() {
-                if ($(this).find('input[name="selecionar_item_modal"]').is(':checked')) {
-                    selectedItemsData.push(JSON.parse($(this).attr('data-item')));
-                }
+    // --- Lógica de Agendamento (Subgrid) ---
+    async function agendarViaSubgrid(button) {
+        const subgridContent = $(button).closest('.subgrid-content');
+        const mainRow = subgridContent.closest('.fertipar-subgrid-row').prev('.fertipar-main-row');
+        const statusInput = subgridContent.find('.subgrid-status');
+        
+        const motoristaId = subgridContent.find('.motorista-subgrid-input').attr('data-id');
+        const caminhaoId = subgridContent.find('.caminhao-subgrid-input').attr('data-id');
+        const cargaSolicitada = subgridContent.find('.carga-solicitada-input').val();
+        const fertiparItem = JSON.parse(mainRow.attr('data-item'));
+
+        if (!motoristaId || !caminhaoId || !fertiparItem) {
+            showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning');
+            return;
+        }
+        
+        const cargaSolicitadaFloat = parseFloat(cargaSolicitada);
+        if (isNaN(cargaSolicitadaFloat) || cargaSolicitadaFloat <= 0) {
+            showAlert('O campo "Carga Solicitada" é obrigatório e deve ser maior que zero.', 'warning');
+            subgridContent.find('.carga-solicitada-input').focus();
+            return;
+        }
+
+        statusInput.val('Agendando...');
+        button.disabled = true;
+
+        const formData = {
+            motorista_id: motoristaId,
+            caminhao_id: caminhaoId,
+            fertipar_item: fertiparItem,
+            carga_solicitada: parseFloat(cargaSolicitada) || null
+        };
+
+        try {
+            const response = await fetch('/agendar', {
+                method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData)
             });
-            displaySelectedFertiparItems(selectedItemsData);
-            $(fertiparModal).modal('hide');
+            const result = await response.json();
+            if (result.success) {
+                showAlert('Agenda criada com sucesso!', 'success');
+                statusInput.val('Agendado!');
+                mainRow.css('text-decoration', 'line-through').addClass('text-muted');
+                subgridContent.find('input, button').prop('disabled', true);
+                fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Atualiza a lista principal
+                rpaFert(result.agenda); // Chama a função rpaFert após o sucesso
+            } else {
+                showAlert('Erro ao agendar: ' + (result.message || 'Erro desconhecido'), 'danger');
+                statusInput.val('Erro!');
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('Erro ao agendar via subgrid:', error);
+            showAlert('Erro de conexão ao agendar.', 'danger');
+            statusInput.val('Falha na conexão');
+            button.disabled = false;
+        }
+    }
+
+    if (fertiparDataTableBody) {
+        // Listener para o botão de agendamento do subgrid
+        fertiparDataTableBody.addEventListener('click', function(event) {
+            const agendarButton = event.target.closest('.btn-agendar-subgrid');
+            if (agendarButton) {
+                agendarViaSubgrid(agendarButton);
+            }
+        });
+
+        // Listener para validação do campo de carga solicitada
+        fertiparDataTableBody.addEventListener('input', function(event) {
+            const cargaInput = event.target.closest('.carga-solicitada-input');
+            if (cargaInput) {
+                const mainRow = $(cargaInput).closest('.fertipar-subgrid-row').prev('.fertipar-main-row');
+                const itemData = JSON.parse(mainRow.attr('data-item'));
+                const qtdeDisponivel = parseFloat(itemData['Qtde.']);
+                const cargaDigitada = parseFloat(cargaInput.value);
+
+                if (!isNaN(cargaDigitada) && !isNaN(qtdeDisponivel) && cargaDigitada > qtdeDisponivel) {
+                    toastr.warning(`A carga solicitada (${cargaDigitada} ton) não pode ser maior que a quantidade disponível (${qtdeDisponivel} ton).`, 'Valor Inválido');
+                    cargaInput.value = qtdeDisponivel;
+                }
+            }
         });
     }
 
@@ -680,12 +883,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input.hasClass('motorista-subgrid-input')) {
             const selectedMotorista = cachedMotoristas.find(m => m.id == selectedId);
             if (selectedMotorista) {
-                detailsDiv.html(`<div class="toast-like-info"><strong>CPF:</strong> ${selectedMotorista.cpf || 'N/A'} | <strong>Telefone:</strong> ${selectedMotorista.telefone || 'N/A'}</div>`);
+                detailsDiv.html(`<small class="text-muted"><strong>CPF:</strong> ${selectedMotorista.cpf || 'N/A'} | <strong>Telefone:</strong> ${selectedMotorista.telefone || 'N/A'}</small>`);
             }
         } else if (input.hasClass('caminhao-subgrid-input')) {
             const selectedCaminhao = cachedCaminhoes.find(c => c.id == selectedId);
             if (selectedCaminhao) {
-                detailsDiv.html(`<div class="toast-like-info"><strong>Placa:</strong> ${selectedCaminhao.placa} | <strong>Carroceria:</strong> ${selectedCaminhao.tipo_carroceria || 'N/A'}</div>`);
+                const reboques = ['1', '2', '3'].map(i => {
+                    const placa = selectedCaminhao[`placa_reboque${i}`];
+                    const uf = selectedCaminhao[`uf${i}`];
+                    return placa ? `Reb${i}: ${placa} (${uf || ''})` : null;
+                }).filter(Boolean).join(' | ');
+                detailsDiv.html(`<small class="text-muted"><strong>Carroceria:</strong> ${selectedCaminhao.tipo_carroceria || 'N/A'}<br>${reboques}</small>`);
             }
         }
     });
