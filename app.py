@@ -5,15 +5,17 @@ from sqlalchemy.exc import OperationalError
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import asyncio # Import asyncio for running async Playwright tasks
 import sys
-from datetime import datetime
-import json
-
 # Adiciona o diretório 'backend' ao sys.path para importações relativas
 # Isso é necessário se 'app.py' é executado diretamente de 'front/'
 # mas 'rotas.py' está em 'backend/rpa_fertipar/'
 # É uma solução temporária, o ideal seria organizar o projeto como um pacote Python
 basedir = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(basedir, 'backend'))
+
+from rpa_service import scrape_fertipar_data # Import the new scraping function
+
 # A pasta backend e o robô Playwright não serão implantados no Vercel neste momento.
 # As linhas de sys.path.append e a importação do robô foram removidas.
 
@@ -27,8 +29,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'supersecretkey'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecretkey_fallback_for_dev')
 # Configuração do banco de dados PostgreSQL a partir de variáveis de ambiente
 db_user = os.getenv('DB_USER', 'postgres')
 db_pass = os.getenv('DB_PASS', 'root')
@@ -95,12 +99,12 @@ class ConfiguracaoRobo(db.Model):
     url_acesso = db.Column(db.String(255), nullable=False)
     filial = db.Column(db.String(50), nullable=False)
     usuario_site = db.Column(db.String(80), nullable=False)
-    senha_site = db.Column(db.String(80), nullable=False)
+    senha_site = db.Column(db.String(255), nullable=False) # Store plain text password
     email_retorno = db.Column(db.String(100), nullable=False)
     pagina_raspagem = db.Column(db.String(255), nullable=True)
     contato = db.Column(db.String(100), nullable=True)
     telefone = db.Column(db.String(20), nullable=True)
-    head_evento = db.Column(db.Boolean, nullable=False, default=True)
+    head_evento = db.Column(db.Boolean, nullable=False, default=False)
     modo_execucao = db.Column(db.String(20), nullable=False, default='agendado') # 'agendado' ou 'teste'
     tempo_espera_segundos = db.Column(db.Integer, nullable=True, default=30)
 
@@ -477,7 +481,7 @@ def salvar_configuracao_robo():
     config.url_acesso = request.form['url_acesso']
     config.filial = request.form['filial']
     config.usuario_site = request.form['usuario_site']
-    config.senha_site = request.form['senha_site']
+    config.senha_site = request.form['senha_site'] # Store plain text password
     config.email_retorno = request.form['email_retorno']
     config.pagina_raspagem = request.form.get('pagina_raspagem')
     config.contato = request.form.get('contato')
@@ -753,29 +757,44 @@ def get_caminhoes():
 
 @app.route('/api/scrape_fertipar_data', methods=['GET'])
 def api_scrape_fertipar_data():
-    simulate_error = request.args.get('simulate') == 'error'
+    configuracao = ConfiguracaoRobo.query.first()
+    if not configuracao:
+        return jsonify({
+            "success": False,
+            "message": "Configuração do robô não encontrada. Por favor, configure o robô na página de administração."
+        }), 404
 
     try:
-        if simulate_error:
-            # Simula um erro de execução (ex: falha de conexão, erro no robô)
-            raise ConnectionError("Simulação de falha de conexão com o site da Fertipar.")
-
-        # Em um cenário real, aqui estaria a chamada para o robô de scraping.
-        # Como o robô não está implantado, retornamos uma lista vazia para
-        # indicar que a busca foi bem-sucedida, mas não encontrou dados.
-        scraped_data = [] 
+        # No decryption needed, password is plain text
+        scraped_data, error_message = asyncio.run(scrape_fertipar_data(configuracao))
         
-        return jsonify({"success": True, "data": scraped_data})
+        if error_message:
+            # Trata a condição de "site bloqueado" como um status informativo, não um erro.
+            if error_message == "Dados Não coletados, site já bloqueado!":
+                return jsonify({
+                    "success": True, 
+                    "data": [],
+                    "message": error_message
+                })
+            else:
+                # Outros erros são erros reais do servidor/raspagem.
+                return jsonify({"success": False, "message": error_message}), 500
+        
+        elif scraped_data:
+            return jsonify({"success": True, "data": scraped_data})
+        else:
+            return jsonify({
+                "success": True,
+                "data": [],
+                "message": "Nenhum dado encontrado para os filtros aplicados."
+            })
 
     except Exception as e:
-        # Log do erro no servidor para depuração
         app.logger.error(f"Erro na api_scrape_fertipar_data: {e}")
-        
-        # Retorna uma resposta de erro padronizada para o frontend
         return jsonify({
             "success": False, 
-            "message": "Não foi possível buscar os dados da Fertipar. O serviço pode estar offline ou indisponível."
-        }), 503 # Service Unavailable
+            "message": f"Não foi possível buscar os dados da Fertipar. Verifique a configuração do robô e se o site está acessível. Erro: {str(e)}"
+        }), 500
 
 @app.route('/api/agendas_em_espera', methods=['GET'])
 def api_agendas_em_espera():
@@ -800,7 +819,7 @@ def teste_robo_config(current_user):
             'url_acesso': configuracao_db.url_acesso,
             'filial': configuracao_db.filial,
             'usuario_site': configuracao_db.usuario_site,
-            'senha_site': configuracao_db.senha_site, # Cuidado com logs de senhas em produção!
+            'senha_site': configuracao_db.get_senha_site(), # Decrypt password for testing output
             'email_retorno': configuracao_db.email_retorno,
             'pagina_raspagem': configuracao_db.pagina_raspagem,
             'contato': configuracao_db.contato,

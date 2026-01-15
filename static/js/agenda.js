@@ -54,14 +54,23 @@ document.addEventListener('DOMContentLoaded', function() {
             "onclick": null,
             "showDuration": "300",
             "hideDuration": "1000",
-            "timeOut": "5000",
             "extendedTimeOut": "1000",
             "showEasing": "swing",
             "hideEasing": "linear",
             "showMethod": "fadeIn",
             "hideMethod": "fadeOut"
         };
-        // Corrige o tipo 'danger' para o tipo 'error' que o toastr espera
+
+        // Caso especial para a mensagem de site bloqueado
+        if (message === "Dados Não coletados, site já bloqueado!") {
+            toastr.options.timeOut = 0; // Fica visível até ser fechado
+            type = 'warning'; // Usa o tipo 'aviso' (amarelo)
+        } else if (type === 'danger') {
+            toastr.options.timeOut = 0; // Erros reais também ficam visíveis
+        } else {
+            toastr.options.timeOut = 5000; // 5 segundos para outros tipos (sucesso, info)
+        }
+
         const toastrType = type === 'danger' ? 'error' : type;
         toastr[toastrType](message);
     }
@@ -259,8 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid"><i class="fas fa-plus"></i></button></td>
                     <td><input type="checkbox" name="selecionar_item_modal" value="${index}"></td>
                     <td>${item.Protocolo || ''}</td><td>${item.Pedido || ''}</td><td>${item.Data || ''}</td>
-                    <td>${item.Situacao || ''}</td><td>${item.Destino || ''}</td><td>${item['Qtde.'] || ''}</td>
-                    <td>${item.Embalagem || ''}</td><td>${item.Cotacao || ''}</td><td>${item.ObservacaoCotacao || ''}</td>
+                    <td>${item['Situação'] || ''}</td><td>${item.Destino || ''}</td><td>${item['Qtde.'] || ''}</td>
+                    <td>${item.Embalagem || ''}</td><td>${item['Cotação'] || ''}</td><td>${item['Observação Cotação'] || ''}</td>
                 `;
 
                 // Subgrid row
@@ -269,33 +278,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 subgridRow.style.display = 'none'; // Esconder por padrão
                 subgridRow.innerHTML = `
                     <td colspan="11"> <!-- Colspan ajustado para cobrir todas as colunas + botão -->
-                        <div class="subgrid-content" style="width: 100%; display: flex; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
-                            <div class="form-group col-md-5 custom-select-container">
+                        <div class="subgrid-content" style="width: 100%; display: flex; align-items: flex-end; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                            <div class="form-group col-md-2 custom-select-container">
                                 <label for="motorista-subgrid-input-${index}">Motorista</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite o motorista" data-id="">
-                                <div class="selected-item-details text-muted" style="font-size: 0.7em;"></div>
-                                <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}">
-                                    <ul class="list-group list-group-flush custom-select-list">
-                                        <!-- Opções serão carregadas via JS -->
-                                    </ul>
-                                </div>
+                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
+                                <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                             </div>
-                            <div class="form-group col-md-5 custom-select-container">
+                            <div class="form-group col-md-2 custom-select-container">
                                 <label for="caminhao-subgrid-input-${index}">Caminhão</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite a placa do caminhão" data-id="">
-                                <div class="selected-item-details text-muted" style="font-size: 0.7em;"></div>
-                                <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}">
-                                    <ul class="list-group list-group-flush custom-select-list">
-                                        <!-- Opções serão carregadas via JS -->
-                                    </ul>
-                                </div>
+                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
+                                <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                             </div>
-                            <div class="form-group col-md-2">
-                                <label for="carga-solicitada-input-${index}">Carga Solicitada</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ex: 10.50">
+                            <div class="form-group col-md-1">
+                                <label for="carga-solicitada-input-${index}">Carga Sol.</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton">
                             </div>
-                            <div class="form-group col-md-2 d-flex align-items-center justify-content-center">
-                                <button type="button" class="btn btn-success btn-sm mt-3 btn-agendar-subgrid">
+                            <div class="form-group col-md-1">
+                                <label>Status</label>
+                                <input type="text" class="form-control form-control-sm" value="" readonly>
+                            </div>
+                            <div class="form-group col-md-1">
+                                <button type="button" class="btn btn-success btn-sm btn-agendar-subgrid">
                                     <i class="fas fa-play mr-1"></i>Agendar
                                 </button>
                             </div>
@@ -366,14 +369,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         populateFertiparTable(result.data);
                         showAlert('Dados Fertipar lidos com sucesso!', 'success');
                     } else {
-                        // Sucesso, mas sem dados
                         populateFertiparTable([]);
-                        showAlert('Não há dados de cotação disponíveis no momento.', 'info');
+                        showAlert(result.message || 'Não há dados de cotação disponíveis no momento.', 'info');
                     }
                     localStorage.setItem(LAST_READ_KEY, new Date().toISOString());
                     updateLastReadStatus();
                 } else {
-                    // Falha na API (success: false)
+                    // Falha na API (success: false) com mensagem de erro
                     populateFertiparTable([]);
                     showAlert(result.message || 'Ocorreu um erro desconhecido ao buscar os dados.', 'danger');
                     lastReadStatus.innerHTML = '<span class="text-danger">Erro na leitura.</span>';

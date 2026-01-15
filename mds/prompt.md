@@ -8,3 +8,5 @@ efetue os itens abaixo numerados no sistema!
 7- Nao execute o app, deixe para o programador;
 
 
+efetue os itens abaixo numerados no sistema!
+1- no subtable da table do modal "Dados Fertipar", no select motorista, que o cabeclho e a linha, ocupe 2 colunas o mesmo caminhao somente 2 colunas, carga solicitada uma coluna,crie uma coluna com  a label de status="" como default tambem uma coluna  e botao agendar uma coluna;
