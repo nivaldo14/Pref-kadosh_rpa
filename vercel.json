@@ -1,13 +1,14 @@
 {
   "version": 2,
-  "buildCommand": "playwright install chromium",
+  "buildCommand": "PLAYWRIGHT_BROWSERS_PATH=/tmp/.ms-playwright playwright install chromium",
   "builds": [
     {
       "src": "app.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "15mb",
-        "runtime": "python3.12"
+        "runtime": "python3.12",
+        "PLAYWRIGHT_BROWSERS_PATH": "/tmp/.ms-playwright"
       }
     },
     {
