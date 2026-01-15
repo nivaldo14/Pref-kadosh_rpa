@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     socket.on('status_update', function(data) {
         console.log('Status update received:', data);
-        toastr.info(`A agenda para o protocolo ${data.protocolo} foi atualizada para: ${data.status}`);
+
         
         // Chamar a nova função para atualizar a cor da linha
         updateTableRowStatus(data.protocolo, data.pedido, data.status);
