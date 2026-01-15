@@ -1,53 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Conexão Socket.IO ---
-    const socket = io();
 
-    socket.on('connect', function() {
-        console.log('Conectado ao servidor Socket.IO!');
-    });
-
-    socket.on('status_update', function(data) {
-        console.log('Status update received:', data);
-
-        
-        // Chamar a nova função para atualizar a cor da linha
-        updateTableRowStatus(data.protocolo, data.pedido, data.status);
-        
-        // Recarregar a lista de agendas em espera
-        fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
-    });
-
-    // Funções auxiliares para encontrar e atualizar o status visual da linha
-    function updateTableRowStatus(protocolo, pedido, newStatus) {
-        // Encontra a linha principal usando o protocolo (e opcionalmente o pedido para maior especificidade)
-        // Usamos um atributo de dados 'data-protocolo-pedido' para uma identificação única
-        const rowIdentifier = `${protocolo}-${pedido}`;
-        const mainRow = $(`#fertiparDataTableBody tr.fertipar-main-row[data-protocolo="${protocolo}"][data-pedido="${pedido}"]`);
-        
-        if (mainRow.length === 0) {
-            console.warn(`Linha para protocolo ${protocolo} e pedido ${pedido} não encontrada.`);
-            return;
-        }
-
-        const subgridRow = mainRow.next('.fertipar-subgrid-row');
-        const statusInput = subgridRow.find('.subgrid-status');
-
-        // Atualiza o texto do status no subgrid
-        statusInput.val(newStatus);
-
-        // Remove classes de status antigas
-        mainRow.removeClass('agendado-row status-changed-row');
-        subgridRow.removeClass('agendado-row status-changed-row');
-
-        // Adiciona a classe apropriada com base no novo status
-        if (newStatus === 'espera') {
-            mainRow.addClass('agendado-row'); // Agendado (verde)
-            subgridRow.addClass('agendado-row');
-        } else {
-            mainRow.addClass('status-changed-row'); // Status diferente de espera (azul)
-            subgridRow.addClass('status-changed-row');
-        }
-    }
 
     // --- Seletores de Elementos ---
     const motoristaSelect = document.getElementById('agenda-motorista-select');

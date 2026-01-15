@@ -10,7 +10,6 @@ import asyncio
 import sys
 import base64
 import traceback
-from flask_socketio import SocketIO
 from threading import Lock
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -41,12 +40,8 @@ APP_VERSION = datetime.now(timezone.utc).strftime("1.0.%y%m%d%H%M")
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-socketio = SocketIO(app, async_mode='threading')
 
-# Background thread for polling
-thread = None
-thread_lock = Lock()
-last_known_statuses = {}
+
 
 # --- Database Models ---
 class Usuario(db.Model):
@@ -60,7 +55,6 @@ class Usuario(db.Model):
     celular = db.Column(db.String(20))
     foto_perfil = db.Column(db.String(200), default='default.jpg')
     role = db.Column(db.String(20), nullable=False, default='user')
-
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
@@ -726,27 +720,6 @@ def clear_agendas():
 
 
 
-# --- SocketIO Background Task ---
-def background_thread():
-    """Example of a background task that polls for changes."""
-    print("Iniciando thread de monitoramento de status...")
-    while True:
-        socketio.sleep(5)
-        with app.app_context():
-            agendas = Agenda.query.all()
-            for agenda in agendas:
-                last_status = last_known_statuses.get(agenda.id)
-                if last_status != agenda.status:
-                    print(f"Status da Agenda {agenda.id} mudou para {agenda.status}. Notificando clientes.")
-                    socketio.emit('status_update', agenda.to_dict(for_socket=True))
-                    last_known_statuses[agenda.id] = agenda.status
 
-@socketio.on('connect')
-def connect():
-    global thread
-    with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(background_thread)
-    print('Cliente conectado.')
 
 
