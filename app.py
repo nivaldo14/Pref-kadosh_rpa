@@ -8,6 +8,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import asyncio
 import sys
+import base64
+import traceback
 from flask_socketio import SocketIO
 from threading import Lock
 
@@ -153,20 +155,29 @@ class ConfiguracaoRobo(db.Model):
     url_acesso = db.Column(db.String(255), nullable=False)
     filial = db.Column(db.String(50), nullable=False)
     usuario_site = db.Column(db.String(80), nullable=False)
-    senha_site_hash = db.Column(db.String(128), nullable=True) # Changed to hash
+    # Coluna para armazenar a senha de forma 'criptografada' (codificada em base64)
+    senha_site_encrypted = db.Column(db.String(255), nullable=True)
     email_retorno = db.Column(db.String(100), nullable=False)
     pagina_raspagem = db.Column(db.String(255), nullable=True)
     contato = db.Column(db.String(100), nullable=True)
     telefone = db.Column(db.String(20), nullable=True)
     head_evento = db.Column(db.Boolean(), nullable=False, default=False)
-    modo_execucao = db.Column(db.String(20), nullable=False, default='teste') # Added based on form
-    tempo_espera_segundos = db.Column(db.Integer, nullable=False, default=30) # Added based on form
+    modo_execucao = db.Column(db.String(20), nullable=False, default='teste')
+    tempo_espera_segundos = db.Column(db.Integer, nullable=False, default=30)
 
     def set_senha_site(self, password):
-        self.senha_site_hash = generate_password_hash(password)
+        """Codifica a senha em base64 antes de salvar."""
+        if password:
+            self.senha_site_encrypted = base64.b64encode(password.encode('utf-8')).decode('utf-8')
 
-    def check_senha_site(self, password):
-        return check_password_hash(self.senha_site_hash, password)
+    @property
+    def senha_site(self):
+        """Decodifica a senha de base64 para uso pelo robô."""
+        if self.senha_site_encrypted:
+            return base64.b64decode(self.senha_site_encrypted).decode('utf-8')
+        return None
+
+    # O método check_senha_site não é mais necessário, pois não estamos usando hashes.
 
 
 # --- Routes ---
@@ -629,16 +640,43 @@ def agendar():
         return jsonify(success=False, message=f'Erro interno do servidor: {e}'), 500
 
 @app.route('/api/scrape_fertipar_data')
-def scrape_data():
+async def scrape_data():
     if 'user_id' not in session:
         return jsonify(error="Não autorizado"), 401
+    
+    # Carrega a configuração do robô do banco de dados
+    config = db.session.query(ConfiguracaoRobo).first()
+    if not config:
+        return jsonify({'success': False, 'message': 'Configuração do robô não encontrada.'}), 500
+        
+    # Verifica se a senha está configurada
+    if not config.senha_site:
+        return jsonify({'success': False, 'message': 'A senha para o site da Fertipar não está configurada.'}), 500
+
     try:
-        data = scrape_fertipar_data()
+        # A função de scraping é assíncrona, então usamos await
+        data = await scrape_fertipar_data(config)
+        
         if data is None:
-             return jsonify({'success': False, 'message': 'Dados Não coletados, site já bloqueado!'})
+             return jsonify({'success': False, 'message': 'Dados não coletados. O site pode estar bloqueado ou a estrutura mudou.'})
+        
         return jsonify({'success': True, 'data': data})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        # Log do erro detalhado em um arquivo para depuração
+        tb_str = traceback.format_exc()
+        error_log_message = f"--- ERRO EM {datetime.now()} ---\n"
+        error_log_message += f"Erro na rota /api/scrape_fertipar_data: {e}\n"
+        error_log_message += f"Traceback:\n{tb_str}\n"
+        
+        with open("scraping_error.log", "a", encoding='utf-8') as f:
+            f.write(error_log_message)
+            
+        # Resposta para o cliente
+        print(f"Erro inesperado durante o scraping. Detalhes em scraping_error.log: {e}")
+        return jsonify({
+            'success': False, 
+            'message': f'Ocorreu um erro interno no servidor. Consulte o arquivo scraping_error.log para detalhes técnicos.'
+        }), 500
 
 @app.route('/api/agenda/<int:agenda_id>', methods=['DELETE'])
 def delete_agenda(agenda_id):

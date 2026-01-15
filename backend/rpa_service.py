@@ -7,117 +7,91 @@ async def scrape_fertipar_data(config):
     Scrapes data from the Fertipar website using Playwright.
 
     Args:
-        config (ConfiguracaoRobo): An object containing robot configuration,
-                                  including url_acesso, usuario_site,
-                                  senha_site, and head_evento.
+        config (ConfiguracaoRobo): An object containing robot configuration.
 
     Returns:
         list: A list of dictionaries, where each dictionary represents a row
-              from the scraped table. Returns an empty list if no data is found
-              or on failure.
+              from the scraped table. Returns None on failure.
     """
     scraped_data = []
     
     # Extract config details
     url_acesso = config.url_acesso
     usuario_site = config.usuario_site
-    senha_site = config.senha_site # Get plain text password
-    head_evento = config.head_evento # True for visible browser, False for headless
+    senha_site = config.senha_site
+    head_evento = config.head_evento
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True) # Sempre executa em modo headless
+        browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
 
         try:
             await page.goto(url_acesso, timeout=60000)
-
-            # Aguarda a página carregar e verifica se já estamos logados (redirecionados para a página de raspagem)
             await page.wait_for_load_state('networkidle')
             
             is_on_login_page = "login.xhtml" in page.url
             
             if is_on_login_page:
-                # --- Processo de Login ---
-                # Seletores exatos fornecidos pelo usuário
-                username_selector = "#j_username" # ID exato
-                password_selector = "#j_password" # ID exato
-                filial_selector = "#filial_input" # ID exato para o <select>
-                login_button_selector = "#btLoginId" # ID exato para o botão
+                print("Página de login detectada. Iniciando processo de login...")
+                username_selector = "#j_username"
+                password_selector = "#j_password"
+                login_button_selector = "#btLoginId"
                 
-                # 1. Preencher usuário
-                await expect(page.locator(username_selector)).to_be_visible(timeout=10000)
                 await page.fill(username_selector, usuario_site)
-                
-                # 2. Preencher senha
-                await expect(page.locator(password_selector)).to_be_visible(timeout=5000)
                 await page.fill(password_selector, senha_site)
 
-                # 3. Selecionar a filial (componente customizado)
                 if config.filial:
-                    # Clica no label do dropdown para abrir as opções
                     await page.locator("#filial_label").click()
-                    # Clica na opção com o nome correspondente
                     await page.get_by_role("option", name=config.filial).click()
                 
-                # 4. Clicar em Entrar
-                await expect(page.locator(login_button_selector)).to_be_enabled(timeout=5000)
                 await page.click(login_button_selector)
-                
                 await page.wait_for_load_state('networkidle', timeout=30000)
+                print("Login realizado com sucesso.")
             else:
-                pass # Already logged in, skipping login process.
+                print("Já logado, pulando etapa de login.")
 
-
-            # A partir daqui, o robô deve estar na página correta, seja por login ou por já estar logado.
-            # Se a página de raspagem for diferente da página pós-login, a navegação é necessária.
             if config.pagina_raspagem and config.pagina_raspagem not in page.url:
-                print(f"Navigating to specific scraping page: {config.pagina_raspagem}")
+                print(f"Navegando para a página de raspagem: {config.pagina_raspagem}")
                 await page.goto(config.pagina_raspagem, timeout=60000)
                 await page.wait_for_load_state('networkidle', timeout=30000)
-                print("Scraping page loaded.")
 
-            # --- Scrape the table data ---
-            table_selector = 'table[role="grid"]' 
-            thead_selector = '#form-minhas-cotacoes\:tbFretes_head' # Escapando o ':' para o seletor CSS
-
-            print("Waiting for table header to be visible...")
+            print("Aguardando pela tabela de dados...")
+            table_selector = 'table[role="grid"]'
+            thead_selector = '#form-minhas-cotacoes\:tbFretes_head'
             await expect(page.locator(thead_selector)).to_be_visible(timeout=30000)
-            print("Fertipar table header found.")
+            print("Tabela encontrada.")
 
             headers = [th.strip() for th in await page.locator(f'{thead_selector} th').all_text_contents() if th.strip()]
-            print(f"Headers found: {headers}")
-
-            tbody_selector = f'{table_selector} tbody'
-            rows = await page.locator(f'{tbody_selector} tr').all()
-            print(f"Found {len(rows)} rows in the table.")
+            rows = await page.locator(f'{table_selector} tbody tr').all()
+            print(f"Encontrado {len(rows)} linhas na tabela.")
 
             for row_element in rows:
                 cols_text = await row_element.locator('td').all_text_contents()
-                
-                # Ignora a primeira coluna (que é de ação, ex: 'Agendar Pedido')
-                # e remove espaços em branco das outras.
                 cols = [col.strip() for col in cols_text][1:]
                 
                 if len(cols) == len(headers):
                     row_data = dict(zip(headers, cols))
                     scraped_data.append(row_data)
                 else:
-                    print(f"Skipping row due to mismatch in column count. Expected {len(headers)}, found {len(cols)}. Content: {cols}")
+                    print(f"Aviso: Linha pulada por ter contagem de colunas diferente. Esperado {len(headers)}, encontrado {len(cols)}.")
         
-        except TimeoutError as e:
-            print(f"An error occurred during the scraping process: {str(e)}")
+        except Exception as e:
+            print("--- ERRO FATAL NO RPA SERVICE ---")
+            import traceback
+            print(traceback.format_exc())
+            print("---------------------------------")
             await page.screenshot(path="error_screenshot.png")
-            print("A screenshot 'error_screenshot.png' was saved for debugging.")
-            scraped_data = []
+            print("Screenshot 'error_screenshot.png' salvo para depuração.")
+            return None  # Sinaliza falha
 
         finally:
-            print("Closing browser.")
+            print("Fechando navegador.")
             await browser.close()
     
     if scraped_data:
-        print(f"Scraped {len(scraped_data)} total rows. Now filtering for 'Situação' == 'APROVADO'...")
+        print(f"Raspagem concluída. Total de {len(scraped_data)} linhas. Filtrando por 'Situação' == 'APROVADO'...")
         filtered_data = [row for row in scraped_data if row.get('Situação') == 'APROVADO']
-        print(f"Found {len(filtered_data)} rows after filtering.")
+        print(f"Encontrado {len(filtered_data)} linhas após filtro.")
         return filtered_data
 
     return scraped_data
