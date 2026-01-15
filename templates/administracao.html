@@ -9,7 +9,7 @@
 
 <div class="admin-tabs">
     <ul class="nav nav-pills" id="adminTab" role="tablist">
-        {% if session.get('user_role') == 'admin' %}
+
         <li class="nav-item">
             <a class="nav-link" id="usuarios-tab" data-toggle="tab" href="#usuarios" role="tab" aria-controls="usuarios" aria-selected="true">
                 <i class="fas fa-users mr-2"></i>Usuários
@@ -20,7 +20,7 @@
                 <i class="fas fa-robot mr-2"></i>Configurações do Robô
             </a>
         </li>
-        {% endif %}
+
         <li class="nav-item">
             <a class="nav-link {% if session.get('user_role') != 'admin' %}active{% endif %}" id="historico-robo-tab" data-toggle="tab" href="#historico-robo" role="tab" aria-controls="historico-robo" aria-selected="false">
                 <i class="fas fa-history mr-2"></i>Histórico Robô
@@ -35,7 +35,7 @@
 </div>
 
 <div class="tab-content" id="adminTabContent">
-    {% if session.get('user_role') == 'admin' %}
+
     <!-- Seção de Usuários -->
     <div class="tab-pane fade" id="usuarios" role="tabpanel" aria-labelledby="usuarios-tab">
         <div class="card mt-4">
@@ -142,7 +142,7 @@
             </div>
         </div>
     </div>
-    {% endif %}
+
 
     <!-- Seção de Histórico Robô -->
     <div class="tab-pane fade {% if session.get('user_role') != 'admin' %}show active{% endif %}" id="historico-robo" role="tabpanel" aria-labelledby="historico-robo-tab">
