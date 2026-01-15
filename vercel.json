@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "playwright install chromium",
   "builds": [
     {
       "src": "app.py",
