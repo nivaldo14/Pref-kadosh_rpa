@@ -747,5 +747,4 @@ def connect():
             thread = socketio.start_background_task(background_thread)
     print('Cliente conectado.')
 
-if __name__ == '__main__':
-    
+
