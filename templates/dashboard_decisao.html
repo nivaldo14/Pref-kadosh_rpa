@@ -76,13 +76,27 @@
 
 <div class="row">
     <!-- Gráfico de Tendência de Agendamentos (Últimos 12 Meses) -->
-    <div class="col-md-5 mx-auto mb-4">
+    <div class="col-md-10 mb-4">
         <div class="card">
             <div class="card-header">
-                <h6 class="mb-0">Tendência de Agendamentos (Últimos 12 Meses)</h5>
+                <h6 class="mb-0">Tendência de Agendamentos (Últimos 12 Meses)</h6>
             </div>
             <div class="card-body">
                 <canvas id="agendamentosTendenciaChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Novo Card ao lado do gráfico -->
+    <div class="col-md-2 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0">Status Raspagem</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <p class="font-weight-bold">Desconhecido</p> {# Placeholder #}
+                    <small class="text-muted">Última atualização: N/A</small> {# Placeholder #}
+                </div>
             </div>
         </div>
     </div>

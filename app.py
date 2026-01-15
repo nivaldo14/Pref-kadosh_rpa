@@ -37,7 +37,7 @@ db_name = os.getenv('DB_NAME', 'dbkadosh')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}?client_encoding=utf8'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-APP_VERSION = "1.0.1"
+APP_VERSION = datetime.now(timezone.utc).strftime("1.0.%y%m%d%H%M")
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
