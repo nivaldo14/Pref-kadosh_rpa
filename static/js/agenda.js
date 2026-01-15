@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Erro ao chamar rpaFert:', error);
-            showAlert('Erro de conexão ao tentar executar o teste do robô.', 'danger');
+            showAlert('Erro de conexão com o servidor ao tentar executar o teste do robô. Verifique sua rede e o status do servidor.', 'danger');
         }
     }
 
@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pesoCarregar = parseFloat(pesoCarregarInput.value);
 
             if (!pesoCarregar || pesoCarregar <= 0) {
-                showAlert('O campo "Peso a Carregar" é obrigatório e deve ser maior que zero.', 'warning');
+                // showAlert('O campo "Peso a Carregar" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
                 pesoCarregarInput.focus();
                 return;
             }
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const fertiparItemJson = hiddenFertiparItemJson.value;
             
             if (!motoristaId || !caminhaoId || !fertiparItemJson) {
-                showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning');
+                // showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning'); // Removido toast
                 return;
             }
 
@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (response.status === 401) {
-                    showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                    // showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger'); // Removido toast
                     return;
                 }
 
@@ -643,11 +643,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     $('[href="#gerar-agenda"]').tab('show'); 
                     fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
                 } else {
-                    showAlert('Erro ao criar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
+                    // Removido toast de erro para simplificar a UI, o erro pode ser visto no console
+                    // showAlert('Erro ao criar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
                 }
             } catch (error) {
                 console.error('Erro ao agendar:', error);
-                showAlert('Erro de conexão ao agendar.', 'danger');
+                // Removido toast de erro de conexão para simplificar a UI
+                // showAlert('Erro de conexão ao agendar.', 'danger');
             }
         });
     }
@@ -664,13 +666,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const fertiparItem = JSON.parse(mainRow.attr('data-item'));
 
         if (!motoristaId || !caminhaoId || !fertiparItem) {
-            showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning');
+            // showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning'); // Removido toast
             return;
         }
         
         const cargaSolicitadaFloat = parseFloat(cargaSolicitada);
         if (isNaN(cargaSolicitadaFloat) || cargaSolicitadaFloat <= 0) {
-            showAlert('O campo "Carga Solicitada" é obrigatório e deve ser maior que zero.', 'warning');
+            // showAlert('O campo "Carga Solicitada" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
             subgridContent.find('.carga-solicitada-input').focus();
             return;
         }
@@ -699,13 +701,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Atualiza a lista principal
                 rpaFert(result.agenda); // Chama a função rpaFert após o sucesso
             } else {
-                showAlert('Erro ao agendar: ' + (result.message || 'Erro desconhecido'), 'danger');
+                // showAlert('Erro ao agendar: ' + (result.message || 'Erro desconhecido'), 'danger'); // Removido toast
                 statusInput.val('Erro!');
                 button.disabled = false;
             }
         } catch (error) {
             console.error('Erro ao agendar via subgrid:', error);
-            showAlert('Erro de conexão ao agendar.', 'danger');
+            // showAlert('Erro de conexão ao agendar.', 'danger'); // Removido toast
             statusInput.val('Falha na conexão');
             button.disabled = false;
         }

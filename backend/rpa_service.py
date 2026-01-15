@@ -2,7 +2,7 @@ import asyncio
 from typing import List, Dict, Optional, Tuple
 from playwright.async_api import async_playwright, Page, expect, TimeoutError
 
-async def scrape_fertipar_data(config):
+async def scrape_fertipar_data(config=None):
     """
     Scrapes data from the Fertipar website using Playwright.
 
@@ -13,6 +13,10 @@ async def scrape_fertipar_data(config):
         list: A list of dictionaries, where each dictionary represents a row
               from the scraped table. Returns None on failure.
     """
+    if config is None:
+        print("Erro: scrape_fertipar_data foi chamada sem um objeto de configuração válido.")
+        raise ValueError("O objeto de configuração (config) é obrigatório para a raspagem de dados.")
+    
     scraped_data = []
     
     # Extract config details
