@@ -677,7 +677,7 @@ def clear_agendas():
     if 'user_id' not in session:
         return jsonify(success=False, message='Não autorizado'), 401
     try:
-        num_deleted = db.session.query(Agenda).filter_by(status='espera').delete()
+        num_deleted = db.session.query(Agenda).filter_by(status='espera').delete(synchronize_session=False)
         db.session.commit()
         return jsonify(success=True, message=f'{num_deleted} agendamentos em espera foram limpos.')
     except Exception as e:

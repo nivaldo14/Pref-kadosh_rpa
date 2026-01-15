@@ -9,8 +9,45 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('status_update', function(data) {
         console.log('Status update received:', data);
         toastr.info(`A agenda para o protocolo ${data.protocolo} foi atualizada para: ${data.status}`);
+        
+        // Chamar a nova função para atualizar a cor da linha
+        updateTableRowStatus(data.protocolo, data.pedido, data.status);
+        
+        // Recarregar a lista de agendas em espera
         fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
     });
+
+    // Funções auxiliares para encontrar e atualizar o status visual da linha
+    function updateTableRowStatus(protocolo, pedido, newStatus) {
+        // Encontra a linha principal usando o protocolo (e opcionalmente o pedido para maior especificidade)
+        // Usamos um atributo de dados 'data-protocolo-pedido' para uma identificação única
+        const rowIdentifier = `${protocolo}-${pedido}`;
+        const mainRow = $(`#fertiparDataTableBody tr.fertipar-main-row[data-protocolo="${protocolo}"][data-pedido="${pedido}"]`);
+        
+        if (mainRow.length === 0) {
+            console.warn(`Linha para protocolo ${protocolo} e pedido ${pedido} não encontrada.`);
+            return;
+        }
+
+        const subgridRow = mainRow.next('.fertipar-subgrid-row');
+        const statusInput = subgridRow.find('.subgrid-status');
+
+        // Atualiza o texto do status no subgrid
+        statusInput.val(newStatus);
+
+        // Remove classes de status antigas
+        mainRow.removeClass('agendado-row status-changed-row');
+        subgridRow.removeClass('agendado-row status-changed-row');
+
+        // Adiciona a classe apropriada com base no novo status
+        if (newStatus === 'espera') {
+            mainRow.addClass('agendado-row'); // Agendado (verde)
+            subgridRow.addClass('agendado-row');
+        } else {
+            mainRow.addClass('status-changed-row'); // Status diferente de espera (azul)
+            subgridRow.addClass('status-changed-row');
+        }
+    }
 
     // --- Seletores de Elementos ---
     const motoristaSelect = document.getElementById('agenda-motorista-select');
@@ -305,17 +342,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (btnSaveFertipar) $(btnSaveFertipar).prop('disabled', needsUpdate);
     }
 
-    function populateFertiparTable(data) {
+    function populateFertiparTable(data, agendasEmEspera = []) {
         fertiparDataTableBody.innerHTML = '';
+        const existingAgendas = new Set(agendasEmEspera.map(a => a.protocolo));
+
         if (data && data.length > 0) {
             data.forEach((item, index) => {
+                const isItemAgendado = existingAgendas.has(item.Protocolo);
                 const row = fertiparDataTableBody.insertRow();
                 row.setAttribute('data-item', JSON.stringify(item));
-                row.classList.add('fertipar-main-row'); // Classe para a linha principal
-                row.setAttribute('data-agenda-id', item.id); // Supondo que item.id existe para identificar a agenda, se não, usar Protocolo ou outro identificador único
+                row.classList.add('fertipar-main-row');
+                if (isItemAgendado) {
+                    row.classList.add('agendado-row'); // Nova classe para linha principal agendada
+                }
+                row.setAttribute('data-protocolo', item.Protocolo);
+                row.setAttribute('data-pedido', item.Pedido); // Adicionado para identificar unicamente
                 row.innerHTML = `
-                    <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid"><i class="fas fa-plus"></i></button></td>
-                    <td><input type="checkbox" name="selecionar_item_modal" value="${index}"></td>
+                    <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid" ${isItemAgendado ? 'disabled' : ''}><i class="fas fa-plus"></i></button></td>
+                    <td><input type="checkbox" name="selecionar_item_modal" value="${index}" ${isItemAgendado ? 'disabled' : ''}></td>
                     <td><strong>${item.Protocolo || ''}</strong></td>
                     <td><strong>${item.Pedido || ''}</strong></td>
                     <td>${item.Data || ''}</td>
@@ -327,36 +371,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${item['Observação Cotação'] || ''}</td>
                 `;
 
-                // Subgrid row
                 const subgridRow = fertiparDataTableBody.insertRow();
                 subgridRow.classList.add('fertipar-subgrid-row');
-                subgridRow.style.display = 'none'; // Esconder por padrão
+                if (isItemAgendado) {
+                    subgridRow.classList.add('agendado-row'); // Nova classe para subgrid agendado
+                }
+                subgridRow.style.display = 'none';
                 subgridRow.innerHTML = `
-                    <td colspan="11"> <!-- Colspan ajustado para cobrir todas as colunas + botão -->
+                    <td colspan="11">
                         <div class="subgrid-content p-2 shadow-sm" style="width: 100%; display: flex; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
                             <div class="form-group col-md-3 custom-select-container">
                                 <label for="motorista-subgrid-input-${index}">Motorista</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
+                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
                                 <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                                 <div class="selected-item-details mt-1"></div>
                             </div>
                             <div class="form-group col-md-3 custom-select-container">
                                 <label for="caminhao-subgrid-input-${index}">Caminhão</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="">
+                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
                                 <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                                 <div class="selected-item-details mt-1"></div>
                             </div>
                             <div class="form-group col-md-2">
                                 <label for="carga-solicitada-input-${index}">Carga Sol.</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton">
+                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton" ${isItemAgendado ? 'disabled' : ''}>
                             </div>
                             <div class="form-group col-md-2">
                                 <label>Status</label>
-                                <input type="text" class="form-control form-control-sm subgrid-status" value="" readonly>
+                                <input type="text" class="form-control form-control-sm subgrid-status" value="${isItemAgendado ? 'Agendado!' : ''}" readonly>
                             </div>
                             <div class="form-group col-md-1">
                                 <label>&nbsp;</label>
-                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid">
+                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid" ${isItemAgendado ? 'disabled' : ''}>
                                     Agendar
                                 </button>
                             </div>
@@ -410,38 +456,38 @@ document.addEventListener('DOMContentLoaded', function() {
             fertiparDataTableBody.innerHTML = '<tr><td colspan="11" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Carregando...</span></div></td></tr>';
 
             try {
-                // Para testar o cenário de erro, você pode adicionar "?simulate=error" na URL.
-                const response = await fetch('/api/scrape_fertipar_data', { headers: getAuthHeaders() });
-                
-                if (response.status === 401) {
+                const [fertiparResponse, agendasEmEspera] = await Promise.all([
+                    fetch('/api/scrape_fertipar_data', { headers: getAuthHeaders() }),
+                    fetchAgendasEmEsperaData()
+                ]);
+
+                if (fertiparResponse.status === 401) {
                     showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
                     lastReadStatus.innerHTML = '<span class="text-danger">Não autorizado.</span>';
-                    populateFertiparTable([]);
+                    populateFertiparTable([], agendasEmEspera); // Pass empty data, but still pass agendasEmEspera
                     return;
                 }
 
-                const result = await response.json();
+                const result = await fertiparResponse.json();
 
                 if (result.success) {
                     if (result.data.length > 0) {
-                        populateFertiparTable(result.data);
+                        populateFertiparTable(result.data, agendasEmEspera);
                         showAlert('Dados Fertipar lidos com sucesso!', 'success');
                     } else {
-                        populateFertiparTable([]);
+                        populateFertiparTable([], agendasEmEspera);
                         showAlert(result.message || 'Não há dados de cotação disponíveis no momento.', 'info');
                     }
                     localStorage.setItem(LAST_READ_KEY, new Date().toISOString());
                     updateLastReadStatus();
                 } else {
-                    // Falha na API (success: false) com mensagem de erro
-                    populateFertiparTable([]);
+                    populateFertiparTable([], agendasEmEspera);
                     showAlert(result.message || 'Ocorreu um erro desconhecido ao buscar os dados.', 'danger');
                     lastReadStatus.innerHTML = '<span class="text-danger">Erro na leitura.</span>';
                 }
             } catch (error) {
-                // Erro de conexão ou outro erro de javascript
                 console.error('Erro ao ler dados Fertipar:', error);
-                populateFertiparTable([]);
+                populateFertiparTable([], []); // Pass empty arrays in case of connection error
                 showAlert('Erro de conexão ao tentar buscar os dados da Fertipar.', 'danger');
                 lastReadStatus.innerHTML = '<span class="text-danger">Falha na conexão.</span>';
             } finally {
@@ -454,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $(fertiparModal).on('show.bs.modal', () => updateLastReadStatus());
         
         // Listener para o novo botão de dados fictícios
-        $('#btnDadosFicticios').on('click', function() {
+        $('#btnDadosFicticios').on('click', async function() {
             const fictitiousData = [
                 { "Protocolo": "346562", "Pedido": "928580", "Data": "13/01/2026 10:21", "Situação": "APROVADO", "Destino": "BELA VISTA -MS", "Qtde.": "46.0", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "" },
                 { "Protocolo": "346512", "Pedido": "939686", "Data": "09/01/2026 16:32", "Situação": "APROVADO", "Destino": "COSTA RICA - MS", "Qtde.": "97.5", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "MINIMO MOTO RODO 247,64" },
@@ -468,7 +514,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situação": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cotação": "620.0", "Observação Cotação": "" }
             ];
             
-            populateFertiparTable(fictitiousData);
+            const agendasEmEspera = await fetchAgendasEmEsperaData(); // Fetch agendas here
+            populateFertiparTable(fictitiousData, agendasEmEspera);
             toastr.info('Dados fictícios carregados na tabela.');
 
             if(lastReadStatus) {
@@ -581,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('Agenda criada com sucesso!', 'success');
+                    showAlert('Agenda criada com sucesso!', 'success', true);
                     
                     const fertiparItem = JSON.parse(fertiparItemJson);
                     if (fertiparItem && fertiparItem.Protocolo) {
@@ -644,10 +691,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const result = await response.json();
             if (result.success) {
-                showAlert('Agenda criada com sucesso!', 'success');
+                showAlert('Agenda criada com sucesso!', 'success', true);
                 statusInput.val('Agendado!');
-                mainRow.css('text-decoration', 'line-through').addClass('text-muted');
-                subgridContent.find('input, button').prop('disabled', true);
+                mainRow.addClass('agendado-row'); // Adiciona classe para linha principal
+                subgridContent.closest('.fertipar-subgrid-row').addClass('agendado-row'); // Adiciona classe para subgrid
+                subgridContent.find('input, button').prop('disabled', true); // Desabilita todos os inputs e botões
                 fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Atualiza a lista principal
                 rpaFert(result.agenda); // Chama a função rpaFert após o sucesso
             } else {

@@ -560,3 +560,23 @@ h2 {
     text-decoration: line-through; /* Riscar o texto do label */
     color: #6c757d; /* Cor mais escura para o texto riscado */
 }
+/* Style for agendado rows in the Fertipar data table */
+.agendado-row {
+    background-color: #d4edda !important; /* Light green background */
+    color: #155724; /* Dark green text */
+    opacity: 0.7; /* Slightly faded */
+    font-style: italic;
+}
+
+/* Specific styling for the last column in the subgrid */
+.fertipar-subgrid-row .subgrid-content td:last-child {
+    background-color: #e9ecef; /* Light gray background for the last column */
+}
+
+/* Style for rows with status changed (e.g., different from 'espera') */
+.status-changed-row {
+    background-color: #d1ecf1 !important; /* Light blue background */
+    color: #0c5460; /* Dark blue text */
+    opacity: 0.9;
+    font-weight: bold;
+}
