@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "bash ./vercel-build.sh",
   "builds": [
     {
       "src": "app.py",
@@ -8,8 +9,7 @@
         "maxLambdaSize": "15mb",
         "runtime": "python3.12",
         "PLAYWRIGHT_BROWSERS_PATH": "/tmp/.ms-playwright"
-      },
-      "installCommand": "pip install -r requirements.txt && PLAYWRIGHT_BROWSERS_PATH=/tmp/.ms-playwright playwright install chromium"
+      }
     },
     {
       "src": "static/**",
