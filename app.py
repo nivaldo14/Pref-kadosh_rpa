@@ -670,7 +670,7 @@ async def scrape_data():
         error_log_message += f"Erro na rota /api/scrape_fertipar_data: {e}\n"
         error_log_message += f"Traceback:\n{tb_str}\n"
         
-        with open("scraping_error.log", "a", encoding='utf-8') as f:
+        with open("/tmp/scraping_error.log", "a", encoding='utf-8') as f:
             f.write(error_log_message)
             
         # Resposta para o cliente
