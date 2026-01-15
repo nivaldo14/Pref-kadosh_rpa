@@ -207,45 +207,7 @@
             // Setup for the second switch
             setupSwitch('modo_execucao', 'Modo Agendado Ativo', 'Modo de Teste Ativo');
 
-            // Botão de Teste Robô
-            const testeRoboBtn = document.getElementById('teste-robo-btn');
-            if (testeRoboBtn) {
-                testeRoboBtn.addEventListener('click', async function() {
-                    const form = this.closest('form');
-                    const configData = {
-                        head_evento: form.querySelector('#head_evento').checked,
-                        modo_execucao: form.querySelector('#modo_execucao').checked ? 'agendado' : 'teste',
-                        url_acesso: form.querySelector('#url_acesso').value,
-                        usuario_site: form.querySelector('#usuario_site').value,
-                        senha_site: form.querySelector('#senha_site').value,
-                        filial: form.querySelector('#filial').value,
-                        contato: form.querySelector('#contato').value,
-                        telefone: form.querySelector('#robo-telefone').value,
-                        pagina_raspagem: form.querySelector('#pagina_raspagem').value,
-                        email_retorno: form.querySelector('#email_retorno').value,
-                        tempo_espera_segundos: form.querySelector('#tempo_espera_segundos').value
-                    };
 
-                    try {
-                        const response = await fetch('/api/teste_robo', {
-                            method: 'POST',
-                            headers: getAuthHeaders(),
-                            body: JSON.stringify(configData),
-                        });
-
-                        const result = await response.json();
-
-                        if (result.success) {
-                            toastr.success('Dados de teste enviados para o console do servidor com sucesso!');
-                        } else {
-                            toastr.error('Erro ao enviar dados de teste: ' + (result.message || 'Erro desconhecido'));
-                        }
-                    } catch (error) {
-                        console.error('Erro ao enviar dados de teste:', error);
-                        toastr.error('Erro de conexão ao enviar dados de teste.');
-                    }
-                });
-            }
         });
     </script>
 {% endblock %}
