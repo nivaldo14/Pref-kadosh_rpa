@@ -591,6 +591,12 @@ def agendas_em_espera():
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
+@app.route('/api/agendas/updates')
+def agendas_updates():
+    # Este endpoint retorna agendas com status diferente de 'espera' para polling
+    agendas = Agenda.query.filter(Agenda.status != 'espera').order_by(Agenda.data_agendamento.desc()).all()
+    return jsonify([agenda.to_dict() for agenda in agendas])
+
 @app.route('/agendar', methods=['POST'])
 def agendar():
     # if 'user_id' not in session:

@@ -81,6 +81,38 @@ document.addEventListener('DOMContentLoaded', function() {
         toastr[toastrType](message);
     }
 
+    // Funções auxiliares para encontrar e atualizar o status visual da linha
+    function updateTableRowStatus(protocolo, pedido, newStatus) {
+        // Encontra a linha principal usando o protocolo (e opcionalmente o pedido para maior especificidade)
+        // Usamos um atributo de dados 'data-protocolo-pedido' para uma identificação única
+        const rowIdentifier = `${protocolo}-${pedido}`;
+        const mainRow = $(`#fertiparDataTableBody tr.fertipar-main-row[data-protocolo="${protocolo}"][data-pedido="${pedido}"]`);
+        
+        if (mainRow.length === 0) {
+            console.warn(`Linha para protocolo ${protocolo} e pedido ${pedido} não encontrada.`);
+            return;
+        }
+
+        const subgridRow = mainRow.next('.fertipar-subgrid-row');
+        const statusInput = subgridRow.find('.subgrid-status');
+
+        // Atualiza o texto do status no subgrid
+        statusInput.val(newStatus);
+
+        // Remove classes de status antigas
+        mainRow.removeClass('agendado-row status-changed-row');
+        subgridRow.removeClass('agendado-row status-changed-row');
+
+        // Adiciona a classe apropriada com base no novo status
+        if (newStatus === 'espera') {
+            mainRow.addClass('agendado-row'); // Agendado (verde)
+            subgridRow.addClass('agendado-row');
+        } else {
+            mainRow.addClass('status-changed-row'); // Status diferente de espera (azul)
+            subgridRow.addClass('status-changed-row');
+        }
+    }
+
     // Funções auxiliares para limpar e atualizar UI
     function clearAgendaForm() {
         motoristaSelect.value = '';
@@ -905,6 +937,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Carregar agendas em espera na inicialização da página
-    fetchAgendasEmEsperaData().then(agendas => renderAgendasEmEspera(agendas));
+    // --- Lógica de Polling para Atualização de Status ---
+    let lastKnownStatuses = {}; // Para controlar o último status conhecido de cada agenda
+
+    async function pollForAgendaUpdates() {
+        try {
+            const response = await fetch('/api/agendas/updates', { headers: getAuthHeaders() });
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            const updatedAgendas = await response.json();
+
+            updatedAgendas.forEach(agenda => {
+                // Atualizar a linha da tabela se o status mudou
+                if (lastKnownStatuses[agenda.id] !== agenda.status) {
+                    updateTableRowStatus(agenda.protocolo, agenda.pedido, agenda.status);
+                    lastKnownStatuses[agenda.id] = agenda.status; // Atualiza o último status conhecido
+                }
+            });
+            // Após verificar as atualizações, recarregar a lista principal para garantir consistência
+            fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
+
+        } catch (error) {
+            console.error('Erro ao buscar atualizações de agendas:', error);
+            //showAlert('Falha ao buscar atualizações de agendas.', 'danger'); // Remover este alerta para evitar spam de toasts
+        }
+    }
+
+    // Inicializar o polling na carga da página e a cada 10 segundos
+    fetchAgendasEmEsperaData().then(agendas => {
+        renderAgendasEmEspera(agendas);
+        // Inicializa lastKnownStatuses com os status atuais ao carregar a página
+        agendas.forEach(agenda => {
+            lastKnownStatuses[agenda.id] = agenda.status;
+        });
+        pollForAgendaUpdates(); // Executa uma vez imediatamente
+    });
+    setInterval(pollForAgendaUpdates, 10000); // Executa a cada 10 segundos
 });
