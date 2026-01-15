@@ -550,10 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Listener para o botão de teste do bot
-        $('#btnTesteBot').on('click', function() {
-            rpaFert();
-        });
+
 
         // Listener para o botão Limpar Agendas
         $('#btnLimparAgendas').on('click', async function() {
