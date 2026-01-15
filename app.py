@@ -201,9 +201,9 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
-        flash('Você precisa estar logado para ver esta página.', 'warning')
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     flash('Você precisa estar logado para ver esta página.', 'warning')
+    #     return redirect(url_for('login'))
     
     user = db.session.get(Usuario, session['user_id'])
 
@@ -300,8 +300,8 @@ def dashboard():
     
 @app.route('/cadastros', methods=['GET'])
 def cadastros():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     user = db.session.get(Usuario, session['user_id'])
     
     # Data for the forms and tables
@@ -325,8 +325,8 @@ def cadastros():
 
 @app.route('/add_caminhao', methods=['POST'])
 def add_caminhao():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     
     try:
         new_caminhao = Caminhao(
@@ -351,8 +351,8 @@ def add_caminhao():
 
 @app.route('/add_motorista', methods=['POST'])
 def add_motorista():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
         
     try:
         new_motorista = Motorista(
@@ -424,13 +424,13 @@ def teste_robo_config():
 
 @app.route('/administracao')
 def administracao():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     user = db.session.get(Usuario, session['user_id'])
     
-    if user.role != 'admin':
-        flash('Você não tem permissão para acessar esta página.', 'danger')
-        return redirect(url_for('dashboard'))
+    # if user.role != 'admin':
+    #     flash('Você não tem permissão para acessar esta página.', 'danger')
+    #     return redirect(url_for('dashboard'))
 
     usuarios = db.session.query(Usuario).order_by(Usuario.username).all()
     configuracao = db.session.query(ConfiguracaoRobo).first()
@@ -448,12 +448,12 @@ def administracao():
 
 @app.route('/add_usuario', methods=['POST'])
 def add_usuario():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     current_user = db.session.get(Usuario, session['user_id'])
-    if current_user.role != 'admin':
-        flash('Você não tem permissão para realizar esta ação.', 'danger')
-        return redirect(url_for('administracao'))
+    # if current_user.role != 'admin':
+    #     flash('Você não tem permissão para realizar esta ação.', 'danger')
+    #     return redirect(url_for('administracao'))
 
     try:
         username = request.form['username']
@@ -498,12 +498,12 @@ def edit_usuario(id):
 
 @app.route('/delete_usuario/<int:id>')
 def delete_usuario(id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     current_user = db.session.get(Usuario, session['user_id'])
-    if current_user.role != 'admin':
-        flash('Você não tem permissão para realizar esta ação.', 'danger')
-        return redirect(url_for('administracao'))
+    # if current_user.role != 'admin':
+    #     flash('Você não tem permissão para realizar esta ação.', 'danger')
+    #     return redirect(url_for('administracao'))
 
     if id == session['user_id']:
         flash('Você não pode excluir seu próprio usuário.', 'danger')
@@ -525,12 +525,12 @@ def delete_usuario(id):
 
 @app.route('/salvar_configuracao_robo', methods=['POST'])
 def salvar_configuracao_robo():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     current_user = db.session.get(Usuario, session['user_id'])
-    if current_user.role != 'admin':
-        flash('Você não tem permissão para realizar esta ação.', 'danger')
-        return redirect(url_for('administracao'))
+    # if current_user.role != 'admin':
+    #     flash('Você não tem permissão para realizar esta ação.', 'danger')
+    #     return redirect(url_for('administracao'))
 
     configuracao = db.session.query(ConfiguracaoRobo).first()
     if not configuracao:
@@ -564,8 +564,8 @@ def salvar_configuracao_robo():
 
 @app.route('/api/teste_robo', methods=['POST'])
 def api_teste_robo():
-    if 'user_id' not in session:
-        return jsonify(success=False, message='Não autorizado'), 401
+    # if 'user_id' not in session:
+    #     return jsonify(success=False, message='Não autorizado'), 401
     
     data = request.get_json()
     print("Dados de teste do robô recebidos (API):", data)
@@ -573,8 +573,8 @@ def api_teste_robo():
 
 @app.route('/relatorios')
 def relatorios():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     user = db.session.get(Usuario, session['user_id'])
     return render_template('relatorios.html', user=user)
 
@@ -589,16 +589,16 @@ def logout():
 # --- API Routes ---
 @app.route('/api/agendas_em_espera')
 def agendas_em_espera():
-    if 'user_id' not in session:
-        return jsonify(error="Não autorizado"), 401
+    # if 'user_id' not in session:
+    #     return jsonify(error="Não autorizado"), 401
     
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
 @app.route('/agendar', methods=['POST'])
 def agendar():
-    if 'user_id' not in session:
-        return jsonify(success=False, message='Não autorizado'), 401
+    # if 'user_id' not in session:
+    #     return jsonify(success=False, message='Não autorizado'), 401
     
     data = request.get_json()
     if not data:
@@ -641,8 +641,8 @@ def agendar():
 
 @app.route('/api/scrape_fertipar_data')
 async def scrape_data():
-    if 'user_id' not in session:
-        return jsonify(error="Não autorizado"), 401
+    # if 'user_id' not in session:
+    #     return jsonify(error="Não autorizado"), 401
     
     # Carrega a configuração do robô do banco de dados
     config = db.session.query(ConfiguracaoRobo).first()
@@ -680,8 +680,8 @@ async def scrape_data():
 
 @app.route('/api/agenda/<int:agenda_id>', methods=['DELETE'])
 def delete_agenda(agenda_id):
-    if 'user_id' not in session:
-        return jsonify(success=False, message='Não autorizado'), 401
+    # if 'user_id' not in session:
+    #     return jsonify(success=False, message='Não autorizado'), 401
     
     agenda = db.session.get(Agenda, agenda_id)
     if not agenda:
@@ -712,8 +712,8 @@ def get_caminhoes():
 
 @app.route('/api/agendas/clear', methods=['POST'])
 def clear_agendas():
-    if 'user_id' not in session:
-        return jsonify(success=False, message='Não autorizado'), 401
+    # if 'user_id' not in session:
+    #     return jsonify(success=False, message='Não autorizado'), 401
     try:
         num_deleted = db.session.query(Agenda).filter_by(status='espera').delete(synchronize_session=False)
         db.session.commit()
