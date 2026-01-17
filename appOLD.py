@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, g
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, extract
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import OperationalError
 from flask_migrate import Migrate
@@ -10,27 +10,23 @@ import asyncio
 import sys
 import base64
 import traceback
+from threading import Lock
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(basedir, 'backend'))
 
 from rpa_service import scrape_fertipar_data
-from rpa_task_processor import process_agendamento_main_task
+#from backend.rpa_service import scrape_fertipar_data
 
+
+import jwt
 from datetime import datetime, timedelta, timezone
 from functools import wraps
+import json
 
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# --- DEBUGGING ---
-print("--- Checking Environment Variables ---")
-print(f"DB_USER from env: {os.getenv('DB_USER')}")
-print(f"DB_HOST from env: {os.getenv('DB_HOST')}")
-print(f"DB_NAME from env: {os.getenv('DB_NAME')}")
-print("------------------------------------")
-# --- END DEBUGGING ---
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecretkey_fallback_for_dev')
@@ -40,7 +36,6 @@ db_host = os.getenv('DB_HOST', 'localhost')
 db_port = os.getenv('DB_PORT', '5432')
 db_name = os.getenv('DB_NAME', 'dbkadosh')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}?client_encoding=utf8'
-print(f"DEBUG DB URI: {app.config['SQLALCHEMY_DATABASE_URI']}") # Added this line
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 APP_VERSION = datetime.now(timezone.utc).strftime("1.0.%y%m%d%H%M")
@@ -48,78 +43,10 @@ APP_VERSION = datetime.now(timezone.utc).strftime("1.0.%y%m%d%H%M")
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-
-# --- Authentication Decorators ---
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            if request.path.startswith('/api/'):
-                return jsonify(error="Não autorizado"), 401
-            flash('Você precisa estar logado para ver esta página.', 'warning')
-            return redirect(url_for('login'))
-        
-        user = db.session.get(Usuario, session['user_id'])
-        if user is None:
-            session.pop('user_id', None)
-            if request.path.startswith('/api/'):
-                return jsonify(error="Sessão inválida"), 401
-            flash('Sessão de usuário inválida. Faça login novamente.', 'warning')
-            return redirect(url_for('login'))
-
-        g.user = user
-        return f(*args, **kwargs)
-    return decorated_function
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            if request.path.startswith('/api/'): return jsonify(error="Não autorizado"), 401
-            flash('Você precisa estar logado para ver esta página.', 'warning')
-            return redirect(url_for('login'))
-        
-        user = db.session.get(Usuario, session['user_id'])
-        if user is None:
-            session.pop('user_id', None)
-            if request.path.startswith('/api/'): return jsonify(error="Sessão inválida"), 401
-            flash('Sessão de usuário inválida. Faça login novamente.', 'warning')
-            return redirect(url_for('login'))
-
-        if user.role not in ['admin', 'dev']:
-            if request.path.startswith('/api/'): return jsonify(error="Permissão de administrador necessária"), 403
-            flash('Você não tem permissão para acessar esta página.', 'danger')
-            return redirect(url_for('dashboard'))
-        
-        g.user = user
-        return f(*args, **kwargs)
-    return decorated_function
-
-def dev_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            if request.path.startswith('/api/'): return jsonify(error="Não autorizado"), 401
-            flash('Você precisa estar logado para ver esta página.', 'warning')
-            return redirect(url_for('login'))
-        
-        user = db.session.get(Usuario, session['user_id'])
-        if user is None:
-            session.pop('user_id', None)
-            if request.path.startswith('/api/'): return jsonify(error="Sessão inválida"), 401
-            flash('Sessão de usuário inválida. Faça login novamente.', 'warning')
-            return redirect(url_for('login'))
-
-        if user.role != 'dev':
-            if request.path.startswith('/api/'): return jsonify(error="Permissão de desenvolvedor necessária"), 403
-            flash('Você não tem permissão para executar esta ação.', 'danger')
-            return redirect(request.referrer or url_for('dashboard'))
-        
-        g.user = user
-        return f(*args, **kwargs)
-    return decorated_function
-
-
+# --- Test Route ---
+@app.route('/test')
+def test_route():
+    return "Test route is working!"
 
 # --- Database Models ---
 class Usuario(db.Model):
@@ -172,7 +99,6 @@ class Agenda(db.Model):
     fertipar_destino = db.Column(db.String(100))
     fertipar_data = db.Column(db.String(50))
     fertipar_qtde = db.Column(db.String(50))
-    fertipar_embalagem = db.Column(db.String(100), nullable=True)
     carga_solicitada = db.Column(db.Numeric(precision=10, scale=2), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='espera')
     data_agendamento = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -256,10 +182,6 @@ class ConfiguracaoRobo(db.Model):
 
 
 # --- Routes ---
-@app.route('/teste')
-def teste():
-    return "Teste OK"
-
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -272,44 +194,41 @@ def login():
             if user:
                 return redirect(url_for('dashboard'))
             else:
+                # Clear invalid user_id from session
                 session.pop('user_id', None)
         except Exception as e:
-            with open("flask_error.log", "w") as f:
-                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                f.write("Error during GET /login (session check):\n")
-                traceback.print_exc(file=f)
+            # If DB connection fails here, log it and clear session
+            print(f"Error during session user check: {e}")
             traceback.print_exc()
-            flash("Ocorreu um erro interno. O administrador foi notificado.", "danger")
-            return render_template('login.html', app_version=APP_VERSION, user=None)
+            session.pop('user_id', None)
+            # Allow fallback to login page render
 
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        try:
-            user = Usuario.query.filter_by(username=username).first()
-            if user and user.check_password(password):
-                session['user_id'] = user.id
-                flash('Login bem-sucedido!', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Usuário ou senha inválidos.', 'danger')
-        except Exception as e:
-            with open("flask_error.log", "w") as f:
-                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                f.write("Error during POST /login (login attempt):\n")
-                traceback.print_exc(file=f)
-            traceback.print_exc()
-            flash("Ocorreu um erro interno durante o login. O administrador foi notificado.", "danger")
-        
-        return redirect(url_for('login'))
-    
-    # Para requisições GET
-    return render_template('login.html', app_version=APP_VERSION, user=None)
+        user = Usuario.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            flash('Login bem-sucedido!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Usuário ou senha inválidos.', 'danger')
+            return redirect(url_for('login'))
+            
+    # Temporarily return a simple string to isolate template issues
+    return "Login page test. If you see this, the template is the problem."
 
 @app.route('/dashboard')
-@login_required
 def dashboard():
-    user = g.user
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para ver esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    user = db.session.get(Usuario, session['user_id'])
+    if not user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
 
     # Basic KPIs
     total_motoristas = db.session.query(func.count(Motorista.id)).scalar()
@@ -386,10 +305,6 @@ def dashboard():
         agendamentos_12m_labels.insert(0, start_of_month.strftime('%m/%Y'))
         agendamentos_12m_data.insert(0, count)
 
-    # Get distinct years for the new summary dropdown
-    years_query = db.session.query(extract('year', Agenda.data_agendamento)).distinct().order_by(extract('year', Agenda.data_agendamento).desc())
-    available_years = [y[0] for y in years_query.all() if y[0] is not None]
-
 
     return render_template(
         'dashboard_decisao.html',
@@ -403,56 +318,19 @@ def dashboard():
         top_motoristas=top_motoristas,
         top_destinos=top_destinos,
         agendamentos_12m_labels=agendamentos_12m_labels,
-        agendamentos_12m_data=agendamentos_12m_data,
-        available_years=available_years
+        agendamentos_12m_data=agendamentos_12m_data
     )
-
-@app.route('/api/resumo_agendamento/<int:year>')
-@login_required
-def resumo_agendamento(year):
-    """
-    Provides a summary of schedules for a given year, grouped by month,
-    destination city, and packaging.
-    """
-    try:
-        summary_query = db.session.query(
-            extract('month', Agenda.data_agendamento).label('mes'),
-            Agenda.fertipar_destino.label('cidade'),
-            Agenda.fertipar_embalagem.label('embalagem'),
-            func.sum(Agenda.carga_solicitada).label('total_carga_solicitada'),
-            func.count(Agenda.id).label('total_agendamentos')
-        ).filter(extract('year', Agenda.data_agendamento) == year)\
-         .group_by('mes', 'cidade', 'embalagem')\
-         .order_by('mes', 'cidade', 'embalagem')\
-         .all()
-
-        summary_list = [
-            {
-                "mes": row.mes,
-                "cidade": row.cidade,
-                "embalagem": row.embalagem,
-                "total_carga_solicitada": float(row.total_carga_solicitada) if row.total_carga_solicitada else 0,
-                "total_agendamentos": row.total_agendamentos
-            } for row in summary_query
-        ]
-        
-        return jsonify(success=True, data=summary_list)
-
-    except OperationalError as e:
-        # This might happen if the migration for 'fertipar_embalagem' hasn't been run
-        db.session.rollback()
-        print(f"ERROR in resumo_agendamento: {e}")
-        return jsonify(success=False, message="Erro de banco de dados. A coluna 'fertipar_embalagem' pode não existir. Execute as migrações."), 500
-    except Exception as e:
-        db.session.rollback()
-        print(f"ERROR in resumo_agendamento: {e}")
-        return jsonify(success=False, message="Ocorreu um erro ao gerar o resumo."), 500
-
     
 @app.route('/cadastros', methods=['GET'])
-@login_required
 def cadastros():
-    user = g.user
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para ver esta página.', 'warning')
+        return redirect(url_for('login'))
+    user = db.session.get(Usuario, session['user_id'])
+    if not user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
     
     # Data for the forms and tables
     caminhoes = Caminhao.query.order_by(Caminhao.placa).all()
@@ -474,8 +352,11 @@ def cadastros():
                            active_tab=active_tab)
 
 @app.route('/add_caminhao', methods=['POST'])
-@login_required
 def add_caminhao():
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+    
     try:
         new_caminhao = Caminhao(
             placa=request.form['placa'].upper(),
@@ -498,8 +379,11 @@ def add_caminhao():
     return redirect(url_for('cadastros', tab='caminhoes'))
 
 @app.route('/add_motorista', methods=['POST'])
-@login_required
 def add_motorista():
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+        
     try:
         new_motorista = Motorista(
             nome=request.form['nome'],
@@ -524,8 +408,10 @@ def edit_caminhao(id):
     return redirect(url_for('cadastros', tab='caminhoes'))
 
 @app.route('/delete_caminhao/<int:id>')
-@login_required
 def delete_caminhao(id):
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
     try:
         caminhao = db.session.get(Caminhao, id)
         if caminhao:
@@ -546,8 +432,10 @@ def edit_motorista(id):
     return redirect(url_for('cadastros', tab='motoristas'))
 
 @app.route('/delete_motorista/<int:id>')
-@login_required
 def delete_motorista(id):
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
     try:
         motorista = db.session.get(Motorista, id)
         if motorista:
@@ -571,12 +459,21 @@ def teste_robo_config():
     return jsonify(success=True, message="Endpoint de teste do robô chamado, mas não implementado.")
 
 @app.route('/administracao')
-@login_required
 def administracao():
-    user = g.user
-    active_tab = request.args.get('active_tab', None)
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para ver esta página.', 'warning')
+        return redirect(url_for('login'))
+    user = db.session.get(Usuario, session['user_id'])
+    if not user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
     
-    usuarios = db.session.query(Usuario).filter(Usuario.role != 'dev').order_by(Usuario.username).all()
+    if user.role != 'admin':
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    usuarios = db.session.query(Usuario).order_by(Usuario.username).all()
     configuracao = db.session.query(ConfiguracaoRobo).first()
     if not configuracao:
         configuracao = ConfiguracaoRobo(url_acesso='', filial='', usuario_site='', email_retorno='')
@@ -588,12 +485,23 @@ def administracao():
                            user=user,
                            usuarios=usuarios,
                            configuracao=configuracao,
-                           session=session,
-                           active_tab=active_tab)
+                           session=session)
 
 @app.route('/add_usuario', methods=['POST'])
-@admin_required
 def add_usuario():
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+    current_user = db.session.get(Usuario, session['user_id'])
+    if not current_user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
+
+    if current_user.role != 'admin':
+        flash('Você não tem permissão para realizar esta ação.', 'danger')
+        return redirect(url_for('administracao'))
+
     try:
         username = request.form['username']
         password = request.form['password']
@@ -602,15 +510,15 @@ def add_usuario():
         
         if password != confirm_password:
             flash('As senhas não coincidem.', 'danger')
-            return redirect(url_for('administracao', active_tab='usuarios'))
+            return redirect(url_for('administracao', tab='usuarios'))
 
         if Usuario.query.filter_by(username=username).first():
             flash('Nome de usuário já existe.', 'danger')
-            return redirect(url_for('administracao', active_tab='usuarios'))
+            return redirect(url_for('administracao', tab='usuarios'))
         
         if Usuario.query.filter_by(email=email).first():
             flash('E-mail já existe.', 'danger')
-            return redirect(url_for('administracao', active_tab='usuarios'))
+            return redirect(url_for('administracao', tab='usuarios'))
 
         new_user = Usuario(
             username=username,
@@ -628,7 +536,7 @@ def add_usuario():
         db.session.rollback()
         flash(f'Erro ao adicionar usuário: {e}', 'danger')
         
-    return redirect(url_for('administracao', active_tab='usuarios'))
+    return redirect(url_for('administracao', tab='usuarios'))
 
 @app.route('/edit_usuario/<int:id>')
 def edit_usuario(id):
@@ -636,8 +544,20 @@ def edit_usuario(id):
     return redirect(url_for('administracao', tab='usuarios'))
 
 @app.route('/delete_usuario/<int:id>')
-@admin_required
 def delete_usuario(id):
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+    current_user = db.session.get(Usuario, session['user_id'])
+    if not current_user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
+
+    if current_user.role != 'admin':
+        flash('Você não tem permissão para realizar esta ação.', 'danger')
+        return redirect(url_for('administracao'))
+
     if id == session['user_id']:
         flash('Você não pode excluir seu próprio usuário.', 'danger')
         return redirect(url_for('administracao', tab='usuarios'))
@@ -657,8 +577,20 @@ def delete_usuario(id):
     return redirect(url_for('administracao', tab='usuarios'))
 
 @app.route('/salvar_configuracao_robo', methods=['POST'])
-@admin_required
 def salvar_configuracao_robo():
+    if 'user_id' not in session:
+        flash('Sua sessão expirou, por favor faça login novamente.', 'warning')
+        return redirect(url_for('login'))
+    current_user = db.session.get(Usuario, session['user_id'])
+    if not current_user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
+
+    if current_user.role != 'admin':
+        flash('Você não tem permissão para realizar esta ação.', 'danger')
+        return redirect(url_for('administracao'))
+
     configuracao = db.session.query(ConfiguracaoRobo).first()
     if not configuracao:
         configuracao = ConfiguracaoRobo()
@@ -691,17 +623,23 @@ def salvar_configuracao_robo():
 
 @app.route('/api/teste_robo', methods=['POST'])
 def api_teste_robo():
-    # if 'user_id' not in session:
-    #     return jsonify(success=False, message='Não autorizado'), 401
+    if 'user_id' not in session:
+        return jsonify(success=False, message='Não autorizado'), 401
     
     data = request.get_json()
     print("Dados de teste do robô recebidos (API):", data)
     return jsonify(success=True, message="Dados de teste do robô recebidos no servidor.")
 
 @app.route('/relatorios')
-@login_required
 def relatorios():
-    user = g.user
+    if 'user_id' not in session:
+        flash('Você precisa estar logado para ver esta página.', 'warning')
+        return redirect(url_for('login'))
+    user = db.session.get(Usuario, session['user_id'])
+    if not user:
+        flash('Usuário não encontrado. Por favor, faça o login novamente.', 'warning')
+        session.pop('user_id', None)
+        return redirect(url_for('login'))
     return render_template('relatorios.html', user=user)
 
 @app.route('/logout')
@@ -713,28 +651,25 @@ def logout():
 
 
 # --- API Routes ---
-@app.route('/api/agendas_processar') # Renamed from agendas_em_espera
-@login_required
-def agendas_processar():
+@app.route('/api/agendas_em_espera')
+def agendas_em_espera():
+    if 'user_id' not in session:
+        return jsonify(error="Não autorizado"), 401
+    
     agendas = Agenda.query.filter_by(status='espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
-@app.route('/api/agendas_agendadas') # New endpoint for agendado status
-@login_required
-def agendas_agendadas():
-    agendas = Agenda.query.filter_by(status='agendado').order_by(Agenda.data_agendamento.desc()).all()
-    return jsonify([agenda.to_dict() for agenda in agendas])
-
 @app.route('/api/agendas/updates')
-@login_required
 def agendas_updates():
     # Este endpoint retorna agendas com status diferente de 'espera' para polling
     agendas = Agenda.query.filter(Agenda.status != 'espera').order_by(Agenda.data_agendamento.desc()).all()
     return jsonify([agenda.to_dict() for agenda in agendas])
 
 @app.route('/agendar', methods=['POST'])
-@login_required
 def agendar():
+    if 'user_id' not in session:
+        return jsonify(success=False, message='Não autorizado'), 401
+    
     data = request.get_json()
     if not data:
         return jsonify(success=False, message='Dados inválidos'), 400
@@ -752,28 +687,6 @@ def agendar():
         return jsonify(success=False, message=f'Já existe uma agenda para o protocolo {fertipar_item.get("Protocolo")}.'), 409
 
     try:
-        config = db.session.query(ConfiguracaoRobo).first()
-        print("--- DADOS PARA PERSISTIR E EXECUTAR RPA ---")
-        print(f"Dados da Agenda Recebidos: {data}")
-        if config:
-            config_to_print = {
-                'id': config.id,
-                'url_acesso': config.url_acesso,
-                'filial': config.filial,
-                'usuario_site': config.usuario_site,
-                'email_retorno': config.email_retorno,
-                'pagina_raspagem': config.pagina_raspagem,
-                'contato': config.contato,
-                'telefone': config.telefone,
-                'head_evento': config.head_evento,
-                'tempo_espera_segundos': config.tempo_espera_segundos,
-                'modo_execucao': config.modo_execucao,
-                'senha_site_encrypted': '***Criptografada***' # Mask sensitive info
-            }
-            print(f"Configuracoes do Robo: {config_to_print}")
-        else:
-            print("Configuracoes do Robo: Nenhuma")
-
         new_agenda = Agenda(
             motorista_id=motorista_id,
             caminhao_id=caminhao_id,
@@ -782,7 +695,6 @@ def agendar():
             fertipar_destino=fertipar_item.get('Destino'),
             fertipar_data=fertipar_item.get('Data'),
             fertipar_qtde=fertipar_item.get('Qtde.'),
-            fertipar_embalagem=fertipar_item.get('Embalagem'),
             carga_solicitada=carga_solicitada,
             status='espera'
         )
@@ -798,8 +710,10 @@ def agendar():
         return jsonify(success=False, message=f'Erro interno do servidor: {e}'), 500
 
 @app.route('/api/scrape_fertipar_data')
-@login_required
-def scrape_data():
+async def scrape_data():
+    if 'user_id' not in session:
+        return jsonify(error="Não autorizado"), 401
+    
     # Carrega a configuração do robô do banco de dados
     config = db.session.query(ConfiguracaoRobo).first()
     if not config:
@@ -810,16 +724,12 @@ def scrape_data():
         return jsonify({'success': False, 'message': 'A senha para o site da Fertipar não está configurada.'}), 500
 
     try:
-        # Executa a função de scraping assíncrona em um loop de eventos
-        data = asyncio.run(scrape_fertipar_data(config))
+        # A função de scraping é assíncrona, então usamos await
+        data = await scrape_fertipar_data(config)
         
         if data is None:
              return jsonify({'success': False, 'message': 'Dados não coletados. O site pode estar bloqueado ou a estrutura mudou.'})
         
-        # Se a raspagem retornou uma lista vazia, significa que não havia dados disponíveis.
-        if not data:
-            return jsonify({'success': True, 'message': 'Nenhuma cotação disponível no momento.', 'data': []})
-            
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         # Log do erro detalhado em um arquivo para depuração
@@ -828,24 +738,21 @@ def scrape_data():
         error_log_message += f"Erro na rota /api/scrape_fertipar_data: {e}\n"
         error_log_message += f"Traceback:\n{tb_str}\n"
         
-        # Use um caminho de arquivo temporário seguro se possível
-        log_file_path = os.path.join(os.path.dirname(__file__), 'scraping_error.log')
-        try:
-            with open(log_file_path, "a", encoding='utf-8') as f:
-                f.write(error_log_message)
-        except Exception as log_e:
-            print(f"Erro ao escrever no arquivo de log: {log_e}")
+        with open("/tmp/scraping_error.log", "a", encoding='utf-8') as f:
+            f.write(error_log_message)
             
         # Resposta para o cliente
-        print(f"Erro inesperado durante o scraping. Detalhes em {log_file_path}: {e}")
+        print(f"Erro inesperado durante o scraping. Detalhes em scraping_error.log: {e}")
         return jsonify({
             'success': False, 
             'message': f'Ocorreu um erro interno no servidor. Consulte o arquivo scraping_error.log para detalhes técnicos.'
         }), 500
 
 @app.route('/api/agenda/<int:agenda_id>', methods=['DELETE'])
-@login_required
 def delete_agenda(agenda_id):
+    if 'user_id' not in session:
+        return jsonify(success=False, message='Não autorizado'), 401
+    
     agenda = db.session.get(Agenda, agenda_id)
     if not agenda:
         return jsonify(success=False, message='Agenda não encontrada'), 404
@@ -859,13 +766,11 @@ def delete_agenda(agenda_id):
         return jsonify(success=False, message=f'Erro ao cancelar agenda: {e}'), 500
 
 @app.route('/api/motoristas')
-@login_required
 def get_motoristas():
     motoristas = Motorista.query.all()
     return jsonify([{'id': m.id, 'nome': m.nome, 'cpf': m.cpf, 'telefone': m.telefone} for m in motoristas])
 
 @app.route('/api/caminhoes')
-@login_required
 def get_caminhoes():
     caminhoes = Caminhao.query.all()
     return jsonify([{
@@ -876,8 +781,9 @@ def get_caminhoes():
     } for c in caminhoes])
 
 @app.route('/api/agendas/clear', methods=['POST'])
-@dev_required
 def clear_agendas():
+    if 'user_id' not in session:
+        return jsonify(success=False, message='Não autorizado'), 401
     try:
         num_deleted = db.session.query(Agenda).filter_by(status='espera').delete(synchronize_session=False)
         db.session.commit()
@@ -886,243 +792,6 @@ def clear_agendas():
         db.session.rollback()
         return jsonify(success=False, message=f'Erro ao limpar agendamentos: {e}'), 500
 
-@app.route('/api/agendas/execute/<int:agenda_id>', methods=['POST'])
-@dev_required
-def execute_agenda_task(agenda_id):
-    """
-    Executes the Playwright RPA task for a specific agenda item.
-    """
-    print(f"--- Inciando execute_agenda_task para agenda_id: {agenda_id} ---")
-    agenda = db.session.get(Agenda, agenda_id)
-    if not agenda:
-        return jsonify(success=False, message="Agenda não encontrada."), 404
-
-    config = db.session.query(ConfiguracaoRobo).first()
-    if not config:
-        print("Configuracoes do Robo (execute_agenda_task): Nenhuma")
-        return jsonify(success=False, message="Configuração do robô não encontrada."), 500
-    else:
-        config_to_print = {
-            'id': config.id,
-            'url_acesso': config.url_acesso,
-            'filial': config.filial,
-            'usuario_site': config.usuario_site,
-            'email_retorno': config.email_retorno,
-            'pagina_raspagem': config.pagina_raspagem,
-            'contato': config.contato,
-            'telefone': config.telefone,
-            'head_evento': config.head_evento,
-            'tempo_espera_segundos': config.tempo_espera_segundos,
-            'modo_execucao': config.modo_execucao,
-            'senha_site_encrypted': '***Criptografada***' # Mask sensitive info
-        }
-        print(f"Configuracoes do Robo (execute_agenda_task): {config_to_print}")
-    
-    motorista = db.session.get(Motorista, agenda.motorista_id)
-    caminhao = db.session.get(Caminhao, agenda.caminhao_id)
-
-    if not motorista or not caminhao:
-        print(f"Motorista: {motorista.nome if motorista else 'N/A'}, Caminhao: {caminhao.placa if caminhao else 'N/A'}")
-        return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
-    print(f"Motorista: {motorista.nome if motorista else 'N/A'}, Caminhao: {caminhao.placa if caminhao else 'N/A'}")
-    
-    # Update agenda status to indicate it's being processed
-    agenda.status = 'processando'
-    db.session.commit()
-
-    try:
-        # Pass the full objects, not just IDs
-        run_headless_mode = not config.head_evento
-        print(f"Chamando process_agendamento_main_task com run_headless={run_headless_mode}")
-        result = asyncio.run(process_agendamento_main_task(config, agenda, motorista, caminhao, run_headless=run_headless_mode))
-        
-        if result['success']:
-            agenda.status = 'agendado'
-            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso.') # Salvar mensagem de sucesso ou o que vier do RPA
-            db.session.commit()
-            return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso.')))
-        else:
-            agenda.status = 'erro'
-            log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA.')
-            agenda.log_retorno = log_content_for_db
-            print(f"DEBUG app.py: Tentando salvar log_retorno para agenda {agenda.id}. Conteúdo (primeiros 200 chars):\n{log_content_for_db[:200]}...")
-            print(f"DEBUG app.py: log_retorno length: {len(log_content_for_db)}")
-
-            try:
-                print(f"DEBUG app.py: Session active BEFORE flush: {db.session.is_active}")
-                db.session.flush() # Try flushing before committing
-                print(f"DEBUG app.py: db.session.flush() successful for agenda {agenda.id}.")
-                print(f"DEBUG app.py: Session active AFTER flush: {db.session.is_active}")
-                
-                db.session.commit()
-                print(f"DEBUG app.py: db.session.commit() successful for agenda {agenda.id}.")
-                print(f"DEBUG app.py: Session active AFTER commit: {db.session.is_active}")
-            except Exception as commit_e:
-                db.session.rollback() # Rollback the original agenda update
-                print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id}: {commit_e}")
-                
-                # Try to update log_retorno with the commit error itself, and commit again
-                # This might fail if the original agenda object is already in a bad state
-                try:
-                    agenda.log_retorno = f"Original commit failed: {commit_e}"
-                    db.session.commit()
-                except Exception as final_e:
-                    db.session.rollback()
-                    print(f"CRITICAL ERROR app.py: Failed to commit commit error for agenda {agenda.id}: {final_e}")
-                    
-                return jsonify(success=False, message=f"Erro ao persistir log: {commit_e}"), 200
-
-            # Após o commit bem-sucedido, force o refresh do objeto agenda do banco de dados
-            # para ter certeza que o objeto em memória reflete o que foi commitado.
-            try:
-                db.session.refresh(agenda)
-                print(f"DEBUG app.py: Agenda {agenda.id} refreshed after commit. log_retorno (refreshed): {agenda.log_retorno[:200]}...")
-            except Exception as refresh_e:
-                print(f"ERROR app.py: Failed to refresh agenda {agenda.id} after commit: {refresh_e}")
-
-            # Verifique o valor do log_retorno diretamente do DB após o commit
-            try:
-                refreshed_agenda = db.session.get(Agenda, agenda.id)
-                if refreshed_agenda:
-                    print(f"DEBUG app.py: Directly queried agenda {agenda.id} from DB. log_retorno: {refreshed_agenda.log_retorno[:200] if refreshed_agenda.log_retorno else 'EMPTY'}...")
-                else:
-                    print(f"DEBUG app.py: Could not query agenda {agenda.id} directly after commit.")
-            except Exception as direct_query_e:
-                print(f"ERROR app.py: Failed to directly query agenda {agenda.id} after commit: {direct_query_e}")
-
-            return jsonify(success=False, message=result.get('user_facing_message', result.get('message', 'Ocorreu um erro durante a execução do RPA.'))), 200
-    except Exception as e:
-        db.session.rollback()
-        agenda.status = 'erro'
-        agenda.log_retorno = f"Erro inesperado no servidor: {e}" # Salvar erro interno
-        db.session.commit()
-        print(f"Erro ao executar automação para agenda {agenda_id}: {e}")
-        return jsonify(success=False, message="Erro interno ao executar a automação do robô."), 500
-
-@app.route('/api/agendas/execute_dev_mode/<int:agenda_id>', methods=['POST'])
-@dev_required
-def execute_agenda_task_dev_mode(agenda_id):
-    """
-    Executes the Playwright RPA task for a specific agenda item in non-headless mode.
-    """
-    print(f"--- Inciando execute_agenda_task_dev_mode para agenda_id: {agenda_id} ---")
-    agenda = db.session.get(Agenda, agenda_id)
-    if not agenda:
-        print(f"Agenda ID {agenda_id} não encontrada.")
-        return jsonify(success=False, message="Agenda não encontrada."), 404
-
-    # Print agenda data
-    print("\n--- Dados da Agenda ---")
-    print(f"ID da Agenda: {agenda.id}")
-    print(f"Protocolo: {agenda.fertipar_protocolo}")
-    print(f"Pedido: {agenda.fertipar_pedido}")
-    print(f"Destino: {agenda.fertipar_destino}")
-    print(f"Status: {agenda.status}")
-    print(f"Motorista ID: {agenda.motorista_id}")
-    print(f"Caminhão ID: {agenda.caminhao_id}")
-    print(f"Carga Solicitada: {agenda.carga_solicitada}")
-    print(f"Data Agendamento: {agenda.data_agendamento}")
-    print("-----------------------")
-
-    config = db.session.query(ConfiguracaoRobo).first()
-    if not config:
-        print("Configuracoes do Robo: Nenhuma")
-        return jsonify(success=False, message="Configuração do robô não encontrada."), 500
-    else:
-        # Print robot configuration as requested
-        print("\n--- Dados do Robô (ConfiguracaoRobo) ---")
-        print(f"ID: {config.id}")
-        print(f"URL Acesso: {config.url_acesso}")
-        print(f"Filial: {config.filial}")
-        print(f"Usuário Site: {config.usuario_site}")
-        print(f"Email Retorno: {config.email_retorno}")
-        print(f"Página Raspagem: {config.pagina_raspagem}")
-        print(f"Contato: {config.contato}")
-        print(f"Telefone: {config.telefone}")
-        print(f"Head Evento: {config.head_evento}")
-        print(f"Tempo Espera Segundos: {config.tempo_espera_segundos}")
-        print(f"Modo Execução: {config.modo_execucao}")
-        print(f"Senha Site (Encrypted): {'***Criptografada***'}") # Mask sensitive info
-        print("----------------------------------------\n")
-    
-    motorista = db.session.get(Motorista, agenda.motorista_id)
-    caminhao = db.session.get(Caminhao, agenda.caminhao_id)
-
-    if not motorista or not caminhao:
-        print(f"Motorista: {motorista.nome if motorista else 'N/A'}, Caminhao: {caminhao.placa if caminhao else 'N/A'}")
-        return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
-    print(f"Motorista: {motorista.nome if motorista else 'N/A'}, Caminhao: {caminhao.placa if caminhao else 'N/A'}")
-    
-    agenda.status = 'processando (Dev)' # Indicate dev mode processing
-    db.session.commit()
-
-    try:
-        # Pass run_headless=False to force non-headless mode
-        run_headless_mode = False # Always non-headless for dev mode
-        print(f"Chamando process_agendamento_main_task com run_headless={run_headless_mode} (Dev Mode)")
-        result = asyncio.run(process_agendamento_main_task(config, agenda, motorista, caminhao, run_headless=run_headless_mode))
-        
-        if result['success']:
-            agenda.status = 'agendado'
-            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso (Dev Mode).') # Salvar mensagem de sucesso ou o que vier do RPA
-            db.session.commit()
-            return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso (Dev Mode).')))
-        else:
-            agenda.status = 'erro (Dev)' # Indicate dev mode error
-            log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA (Dev Mode).')
-            agenda.log_retorno = log_content_for_db
-            print(f"DEBUG app.py: Tentando salvar log_retorno para agenda {agenda.id} (Dev Mode). Conteúdo (primeiros 200 chars):\n{log_content_for_db[:200]}...")
-            print(f"DEBUG app.py: log_retorno length: {len(log_content_for_db)}")
-            
-            try:
-                print(f"DEBUG app.py: Session active BEFORE flush: {db.session.is_active}")
-                db.session.flush() # Try flushing before committing
-                print(f"DEBUG app.py: db.session.flush() successful for agenda {agenda.id} (Dev Mode).")
-                print(f"DEBUG app.py: Session active AFTER flush: {db.session.is_active}")
-
-                db.session.commit()
-                print(f"DEBUG app.py: db.session.commit() successful for agenda {agenda.id} (Dev Mode).")
-                print(f"DEBUG app.py: Session active AFTER commit: {db.session.is_active}")
-            except Exception as commit_e:
-                db.session.rollback() # Rollback the original agenda update
-                print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id} (Dev Mode): {commit_e}")
-                
-                # Try to update log_retorno with the commit error itself, and commit again
-                try:
-                    agenda.log_retorno = f"Original commit (Dev Mode) failed: {commit_e}"
-                    db.session.commit()
-                except Exception as final_e:
-                    db.session.rollback()
-                    print(f"CRITICAL ERROR app.py: Failed to commit commit error for agenda {agenda.id} (Dev Mode): {final_e}")
-                    
-                return jsonify(success=False, message=f"Erro ao persistir log (Dev Mode): {commit_e}"), 200
-
-            # Após o commit bem-sucedido, force o refresh do objeto agenda do banco de dados
-            # para ter certeza que o objeto em memória reflete o que foi commitado.
-            try:
-                db.session.refresh(agenda)
-                print(f"DEBUG app.py: Agenda {agenda.id} refreshed after commit (Dev Mode). log_retorno (refreshed): {agenda.log_retorno[:200]}...")
-            except Exception as refresh_e:
-                print(f"ERROR app.py: Failed to refresh agenda {agenda.id} after commit (Dev Mode): {refresh_e}")
-
-            # Verifique o valor do log_retorno diretamente do DB após o commit
-            try:
-                refreshed_agenda = db.session.get(Agenda, agenda.id)
-                if refreshed_agenda:
-                    print(f"DEBUG app.py: Directly queried agenda {agenda.id} from DB (Dev Mode). log_retorno: {refreshed_agenda.log_retorno[:200] if refreshed_agenda.log_retorno else 'EMPTY'}...")
-                else:
-                    print(f"DEBUG app.py: Could not query agenda {agenda.id} directly after commit (Dev Mode).")
-            except Exception as direct_query_e:
-                print(f"ERROR app.py: Failed to directly query agenda {agenda.id} after commit (Dev Mode): {direct_query_e}")
-
-            return jsonify(success=False, message=result.get('user_facing_message', result.get('message', 'Ocorreu um erro durante a execução do RPA (Dev Mode).'))), 200
-    except Exception as e:
-        db.session.rollback()
-        agenda.status = 'erro (Dev)' # Indicate dev mode error
-        agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}" # Salvar erro interno
-        db.session.commit()
-        print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}")
-        return jsonify(success=False, message="Erro interno ao executar a automação do robô (Dev Mode)."), 500
 
 
 

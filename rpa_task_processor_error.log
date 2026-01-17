@@ -1,0 +1,361 @@
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 17:58:55.316815 ---\nErro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+\nTraceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 91, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+\n--- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:23:36.161248 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:30:29.155469 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:47:22.933540 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:10:15.728825 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:14:30.907821 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:20:17.393315 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:26:26.483353 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:29:09.814606 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:34:12.510826 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:38:50.686433 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:41:10.855897 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:44:43.563898 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:51:03.582583 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
+    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 30000ms
+  - waiting for get_by_role("grid").first
+
+

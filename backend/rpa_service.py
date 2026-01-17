@@ -62,22 +62,26 @@ async def scrape_fertipar_data(config=None):
             print("Aguardando pela tabela de dados...")
             table_selector = 'table[role="grid"]'
             thead_selector = '#form-minhas-cotacoes\:tbFretes_head'
-            await expect(page.locator(thead_selector)).to_be_visible(timeout=30000)
-            print("Tabela encontrada.")
+            
+            try:
+                await expect(page.locator(thead_selector)).to_be_visible(timeout=30000)
+                print("Tabela encontrada.")
+                headers = [th.strip() for th in await page.locator(f'{thead_selector} th').all_text_contents() if th.strip()]
+                rows = await page.locator(f'{table_selector} tbody tr').all()
+                print(f"Encontrado {len(rows)} linhas na tabela.")
 
-            headers = [th.strip() for th in await page.locator(f'{thead_selector} th').all_text_contents() if th.strip()]
-            rows = await page.locator(f'{table_selector} tbody tr').all()
-            print(f"Encontrado {len(rows)} linhas na tabela.")
-
-            for row_element in rows:
-                cols_text = await row_element.locator('td').all_text_contents()
-                cols = [col.strip() for col in cols_text][1:]
-                
-                if len(cols) == len(headers):
-                    row_data = dict(zip(headers, cols))
-                    scraped_data.append(row_data)
-                else:
-                    print(f"Aviso: Linha pulada por ter contagem de colunas diferente. Esperado {len(headers)}, encontrado {len(cols)}.")
+                for row_element in rows:
+                    cols_text = await row_element.locator('td').all_text_contents()
+                    cols = [col.strip() for col in cols_text][1:]
+                    
+                    if len(cols) == len(headers):
+                        row_data = dict(zip(headers, cols))
+                        scraped_data.append(row_data)
+                    else:
+                        print(f"Aviso: Linha pulada por ter contagem de colunas diferente. Esperado {len(headers)}, encontrado {len(cols)}.")
+            except (TimeoutError, AssertionError):
+                print("Aviso: Tabela de dados não encontrada (Timeout ou Assertion). Nenhuma cotação disponível ou a estrutura da página mudou.")
+                return [] # Retorna uma lista vazia para indicar que não há dados, sem ser um erro fatal
         
         except Exception as e:
             print("--- ERRO FATAL NO RPA SERVICE ---")

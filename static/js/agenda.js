@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toastr.options.extendedTimeOut = 0;
         }
         else {
-            toastr.options.timeOut = 5000; // 5 segundos para outros tipos (success, info)
+            toastr.options.timeOut = 10000; // 10 segundos para outros tipos (success, info)
         }
 
         const toastrType = type === 'danger' ? 'error' : type;
@@ -100,14 +100,18 @@ document.addEventListener('DOMContentLoaded', function() {
         statusInput.val(newStatus);
 
         // Remove classes de status antigas
-        mainRow.removeClass('agendado-row status-changed-row');
-        subgridRow.removeClass('agendado-row status-changed-row');
+        mainRow.removeClass('agendado-row status-changed-row erro-row'); // Added erro-row
+        subgridRow.removeClass('agendado-row status-changed-row erro-row'); // Added erro-row
 
         // Adiciona a classe apropriada com base no novo status
         if (newStatus === 'espera') {
             mainRow.addClass('agendado-row'); // Agendado (verde)
             subgridRow.addClass('agendado-row');
-        } else {
+        } else if (newStatus === 'erro' || newStatus === 'erro (Dev)') { // Added condition for error
+            mainRow.addClass('erro-row');
+            subgridRow.addClass('erro-row');
+        }
+        else {
             mainRow.addClass('status-changed-row'); // Status diferente de espera (azul)
             subgridRow.addClass('status-changed-row');
         }
@@ -144,8 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function fetchAgendasEmEsperaData() {
-        return fetch('/api/agendas_em_espera', { headers: getAuthHeaders() })
+    function fetchAgendasProcessarData() { // Renamed
+        return fetch('/api/agendas_processar', { headers: getAuthHeaders() }) // Changed endpoint
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status}`);
@@ -153,24 +157,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .catch(error => {
-                console.error('Erro ao buscar agendas em espera:', error);
-                showAlert('Falha ao carregar agendas em espera. Verifique sua conexão ou autenticação.', 'danger');
+                console.error('Erro ao buscar agendas pendentes:', error); // Updated message
+                showAlert('Falha ao carregar agendas pendentes. Verifique sua conexão ou autenticação.', 'danger'); // Updated message
+                return []; // Retorna um array vazio em caso de erro
+            });
+    }
+
+    function fetchAgendasAgendadasData() {
+        return fetch('/api/agendas_agendadas', { headers: getAuthHeaders() })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Erro ao buscar agendas agendadas:', error);
+                showAlert('Falha ao carregar agendas agendadas. Verifique sua conexão ou autenticação.', 'danger');
                 return []; // Retorna um array vazio em caso de erro
             });
     }
 
     // Nova função para renderizar as agendas no DOM
-    function renderAgendasEmEspera(agendas) {
+    async function renderAgendasAgendadas(agendas) { // Renamed, now async
         agendasEmEsperaBody.innerHTML = ''; // Limpa o conteúdo atual da tabela
 
         if (agendas.length === 0) {
-            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda em espera.</td></tr>'; // Colspan ajustado para 9
+            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda agendada.</td></tr>'; // Updated message
             return;
         }
 
-        agendas.forEach(agenda => {
+        for (const agenda of agendas) { // Use for...of for async operations if needed, or just forEach
             const row = agendasEmEsperaBody.insertRow();
             
+            // Determine badge class based on status
+            let statusBadgeClass = 'badge-secondary'; // Default
+            let rowClass = ''; // New variable for row class
+
+            if (agenda.status === 'agendado') {
+                statusBadgeClass = 'badge-success';
+            } else if (agenda.status === 'erro' || agenda.status === 'erro (Dev)') { // Handle error status
+                statusBadgeClass = 'badge-danger';
+                rowClass = 'erro-row'; // Apply error row class
+            } else if (agenda.status === 'processando' || agenda.status === 'processando (Dev)') {
+                statusBadgeClass = 'badge-info';
+            } else if (agenda.status === 'cancelado') { // If status can be 'cancelado'
+                statusBadgeClass = 'badge-warning';
+            }
+
             // Formata as informações do caminhão a partir do objeto
             let caminhaoDisplay = agenda.caminhao.placa;
             if (agenda.caminhao.tipo_carroceria) {
@@ -180,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 caminhaoDisplay += ` | ${agenda.caminhao.reboques.join(', ')}`;
             }
 
+            row.className = rowClass; // Apply the row class
             row.innerHTML = `
                 <td>${agenda.data_agendamento}</td>
                 <td>${agenda.motorista}</td>
@@ -187,15 +222,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${agenda.protocolo}</td>
                 <td>${agenda.pedido}</td>
                 <td>${agenda.destino}</td>
-                <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td> <!-- Display new field -->
-                <td><span class="badge badge-warning">${agenda.status}</span></td>
+                <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td>
+                <td><span class="badge ${statusBadgeClass}">${agenda.status.toUpperCase()}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-info" title="Iniciar"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${agenda.status === 'agendado' || agenda.status === 'processando' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
                     <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}"><i class="fas fa-times"></i></button>
                 </td>
             `;
-        });
+            // Add event listener for the new execute button
+            const executeButton = row.querySelector('.btn-executar-agenda');
+            if (executeButton) {
+                executeButton.addEventListener('click', async () => {
+                    await executeAgenda(agenda.id);
+                });
+            }
+        }
     }
+
+    async function executeAgendaDevMode(agendaId) {
+        console.log(`[Dev Mode] Tentando executar agenda ID: ${agendaId}`);
+        showAlert(`Enviando agenda ID ${agendaId} para processamento em modo DEV (apenas log no console do Flask)...`, 'info', true);
+        try {
+            const response = await fetch(`/api/agendas/execute_dev_mode/${agendaId}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message || 'Comando RPA (DEV) executado com sucesso!', 'success');
+                console.log(`[Dev Mode] Resposta do Flask: ${result.message}`);
+            } else {
+                showAlert(result.message || 'Ocorreu um erro durante a execução do RPA (DEV).', 'danger', true);
+                console.error(`[Dev Mode] Erro do Flask: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('[Dev Mode] Erro ao chamar executeAgendaDevMode:', error);
+            showAlert('Erro de conexão com o servidor ao tentar executar o RPA (DEV). Verifique sua rede e o status do servidor.', 'danger', true);
+        }
+        // Não é necessário loadAndRenderAgendas aqui, pois é apenas um log no modo dev
+    }
+
 
     // --- Lógica Principal ---
 
@@ -211,27 +284,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function rpaFert(agenda_data = null) {
-        toastr.info('Enviando comando de teste para o robô...');
+    async function executeRpaTask(agenda) {
         try {
-            const response = await fetch('/api/rpa_fertipar_teste', {
+            const response = await fetch(`/api/agendas/execute/${agenda.id}`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ agenda_data: agenda_data })
             });
 
             const result = await response.json();
-
-            if (result.success) {
-                showAlert(result.message || 'Comando de teste executado. Verifique o console do servidor.', 'success');
-            } else {
-                showAlert(result.message || 'Ocorreu um erro desconhecido durante o teste do robô.', 'danger');
-            }
+            return result; // Retorna o resultado JSON bruto do backend
         } catch (error) {
-            console.error('Erro ao chamar rpaFert:', error);
-            showAlert('Erro de conexão com o servidor ao tentar executar o teste do robô. Verifique sua rede e o status do servidor.', 'danger');
+            console.error('Erro de conexão ao chamar executeRpaTask:', error);
+            // Retorna um objeto de erro para que o chamador possa lidar com ele
+            return { success: false, message: 'Erro de conexão com o servidor ao tentar executar o RPA. Verifique sua rede e o status do servidor.', user_facing_message: 'Erro de conexão com o servidor.' };
         }
     }
+
+    const btnLigarRoboDev = document.getElementById('btnLigarRoboDev');
+    if (btnLigarRoboDev) {
+        btnLigarRoboDev.addEventListener('click', async function() {
+            const agendaId = prompt("Por favor, insira o ID da agenda para executar em modo DEV:");
+            if (agendaId) {
+                await executeAgendaDevMode(parseInt(agendaId));
+            } else {
+                showAlert("ID da agenda não fornecido. Operação cancelada.", 'warning');
+            }
+        });
+    }
+
 
     // 1. Atualizar informações e campos ocultos na seleção
     if (motoristaSelect) {
@@ -328,11 +408,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateFertiparTable(data, agendasEmEspera = []) {
         fertiparDataTableBody.innerHTML = '';
-        const existingAgendas = new Set(agendasEmEspera.map(a => a.protocolo));
+        // existingAgendas deve armazenar a combinação protocolo-pedido
+        const existingAgendas = new Set(agendasEmEspera.map(a => `${a.protocolo}-${a.pedido}`));
 
         if (data && data.length > 0) {
             data.forEach((item, index) => {
-                const isItemAgendado = existingAgendas.has(item.Protocolo);
+                // Verificar se o item já está agendado usando protocolo-pedido
+                const isItemAgendado = existingAgendas.has(`${item.Protocolo}-${item.Pedido}`);
                 const row = fertiparDataTableBody.insertRow();
                 row.setAttribute('data-item', JSON.stringify(item));
                 row.classList.add('fertipar-main-row');
@@ -407,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const heading = '<h5>Itens Fertipar Selecionados</h5>';
         const cardContainer = $('<div class="d-flex flex-wrap"></div>');
 
-        fetchAgendasEmEsperaData().then(agendasEmEspera => {
+        fetchAgendasProcessarData().then(agendasEmEspera => {
             const existingAgendas = new Set(agendasEmEspera.map(a => `${a.protocolo}-${a.pedido}`));
 
             items.forEach((item, index) => {
@@ -442,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const [fertiparResponse, agendasEmEspera] = await Promise.all([
                     fetch('/api/scrape_fertipar_data', { headers: getAuthHeaders() }),
-                    fetchAgendasEmEsperaData()
+                    fetchAgendasProcessarData()
                 ]);
 
                 if (fertiparResponse.status === 401) {
@@ -498,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situação": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cotação": "620.0", "Observação Cotação": "" }
             ];
             
-            const agendasEmEspera = await fetchAgendasEmEsperaData(); // Fetch agendas here
+            const agendasEmEspera = await fetchAgendasProcessarData(); // Fetch agendas here
             populateFertiparTable(fictitiousData, agendasEmEspera);
             toastr.info('Dados fictícios carregados na tabela.');
 
@@ -553,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (result.success) {
                     showAlert(result.message || 'Agendamentos limpos com sucesso!', 'success');
-                    fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Recarrega a lista de agendas em espera
+                    loadAndRenderAgendas();
                 } else {
                     showAlert(result.message || 'Ocorreu um erro ao limpar os agendamentos.', 'danger');
                 }
@@ -616,16 +698,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         disableFertiparCard(fertiparItem.Protocolo);
                     }
                     
-                    rpaFert(result.agenda); // Chama a função rpaFert com os dados da nova agenda
+                    showAlert(`Executando RPA para Protocolo ${fertiparItem.Protocolo}...`, 'info', true);
+                    const rpaResult = await executeRpaTask(result.agenda); // Chama a função refatorada
+
+                    if (rpaResult.success) {
+                        showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+                    } else {
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        showAlert(displayMessage, 'danger', true);
+                    }
                     
                     clearAgendaForm(); // Limpa os campos
 
                     // Ativa a aba "Gerar Agenda" e recarrega a lista
                     $('[href="#gerar-agenda"]').tab('show'); 
-                    fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
+                    loadAndRenderAgendas();
                 } else {
-                    // Removido toast de erro para simplificar a UI, o erro pode ser visto no console
-                    // showAlert('Erro ao criar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
+                    showAlert(result.message || 'Erro ao criar agenda: Erro desconhecido', 'danger');
                 }
             } catch (error) {
                 console.error('Erro ao agendar:', error);
@@ -675,21 +764,41 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             if (result.success) {
                 showAlert('Agenda criada com sucesso!', 'success', true);
-                statusInput.val('Agendado!');
-                mainRow.addClass('agendado-row'); // Adiciona classe para linha principal
-                subgridContent.closest('.fertipar-subgrid-row').addClass('agendado-row'); // Adiciona classe para subgrid
+                
+                // --- Parte 1: Atualizar UI da sub-tabela para "espera" ---
+                // O statusInput já está 'Agendando...', agora mudamos para 'espera' e aplicamos o estilo
+                statusInput.val('espera');
+                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'espera');
+                
+                // --- Parte 2: Chamar o RPA e atualizar UI com o resultado final ---
+                showAlert(`Executando RPA para Protocolo ${fertiparItem.Protocolo}...`, 'info', true);
+                const rpaResult = await executeRpaTask(result.agenda); // Chama a função refatorada
+
+                if (rpaResult.success) {
+                    showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+                } else {
+                    // Usa user_facing_message se disponível, senão a message padrão
+                    const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                    showAlert(displayMessage, 'danger', true);
+                }
+
+                // Atualizar o status final na sub-tabela e na tabela principal
+                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, rpaResult.success ? 'agendado' : 'erro');
+                loadAndRenderAgendas(); // Recarrega a lista principal para refletir o status final
+
                 subgridContent.find('input, button').prop('disabled', true); // Desabilita todos os inputs e botões
-                fetchAgendasEmEsperaData().then(renderAgendasEmEspera); // Atualiza a lista principal
-                rpaFert(result.agenda); // Chama a função rpaFert após o sucesso
+                
             } else {
-                // showAlert('Erro ao agendar: ' + (result.message || 'Erro desconhecido'), 'danger'); // Removido toast
+                showAlert(result.message || 'Erro ao criar agenda: Erro desconhecido', 'danger');
                 statusInput.val('Erro!');
+                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'erro'); // Atualiza visualmente para erro
                 button.disabled = false;
             }
         } catch (error) {
             console.error('Erro ao agendar via subgrid:', error);
-            // showAlert('Erro de conexão ao agendar.', 'danger'); // Removido toast
+            showAlert('Erro de conexão ao agendar. Verifique sua rede e o status do servidor.', 'danger');
             statusInput.val('Falha na conexão');
+            updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'erro'); // Atualiza visualmente para erro
             button.disabled = false;
         }
     }
@@ -726,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 showAlert('Iniciando o processamento de "Agendar Todos". Verifique o console do navegador para os detalhes.', 'info'); // Alerta moderno
                 
-                const agendas = await fetchAgendasEmEsperaData();
+                const agendas = await fetchAgendasProcessarData();
                 if (agendas.length === 0) {
                     showAlert('Nenhuma agenda em espera para agendar.', 'info');
                     return;
@@ -766,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.success) {
                 showAlert('Agenda cancelada com sucesso!', 'success');
-                fetchAgendasEmEsperaData().then(agendas => renderAgendasEmEspera(agendas)); // Recarregar a lista
+                loadAndRenderAgendas(); // Recarregar a lista
             } else {
                 showAlert('Erro ao cancelar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
             }
@@ -937,27 +1046,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    async function executeAgenda(agendaId) {
+        if (!confirm('Tem certeza que deseja executar esta agenda?')) {
+            return;
+        }
+        showAlert(`Executando agenda ID ${agendaId}...`, 'info', true);
+        try {
+            const response = await fetch(`/api/agendas/execute/${agendaId}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message || 'Agenda executada com sucesso!', 'success');
+                // Re-render the table to reflect status change (e.g., from 'espera'/'erro' to 'processando' then 'agendado')
+                await loadAndRenderAgendas(); 
+            } else {
+                showAlert(result.message || 'Ocorreu um erro ao executar a agenda.', 'danger');
+                await loadAndRenderAgendas(); // Re-render to show error status
+            }
+        } catch (error) {
+            console.error('Erro de conexão ao executar agenda:', error);
+            showAlert('Erro de conexão ao executar agenda.', 'danger');
+        }
+    }
+
     // --- Lógica de Polling para Atualização de Status ---
     let lastKnownStatuses = {}; // Para controlar o último status conhecido de cada agenda
 
     async function pollForAgendaUpdates() {
         try {
-            const response = await fetch('/api/agendas/updates', { headers: getAuthHeaders() });
-            if (!response.ok) {
-                throw new Error(`Erro HTTP: ${response.status}`);
-            }
-            const updatedAgendas = await response.json();
-
-            updatedAgendas.forEach(agenda => {
-                // Atualizar a linha da tabela se o status mudou
-                if (lastKnownStatuses[agenda.id] !== agenda.status) {
-                    updateTableRowStatus(agenda.protocolo, agenda.pedido, agenda.status);
-                    lastKnownStatuses[agenda.id] = agenda.status; // Atualiza o último status conhecido
-                }
-            });
-            // Após verificar as atualizações, recarregar a lista principal para garantir consistência
-            fetchAgendasEmEsperaData().then(renderAgendasEmEspera);
-
+            const agendas = await fetchAgendasAgendadasData(); // Re-fetch all agendadas data
+            await renderAgendasAgendadas(agendas); // Re-render the whole table
         } catch (error) {
             console.error('Erro ao buscar atualizações de agendas:', error);
             //showAlert('Falha ao buscar atualizações de agendas.', 'danger'); // Remover este alerta para evitar spam de toasts
@@ -965,13 +1092,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Inicializar o polling na carga da página e a cada 10 segundos
-    fetchAgendasEmEsperaData().then(agendas => {
-        renderAgendasEmEspera(agendas);
+    async function loadAndRenderAgendas() {
+        const agendas = await fetchAgendasAgendadasData(); // Fetch agendado items
+        await renderAgendasAgendadas(agendas);
         // Inicializa lastKnownStatuses com os status atuais ao carregar a página
         agendas.forEach(agenda => {
             lastKnownStatuses[agenda.id] = agenda.status;
         });
-        pollForAgendaUpdates(); // Executa uma vez imediatamente
-    });
+    }
+
+    loadAndRenderAgendas(); // Executa uma vez imediatamente
     setInterval(pollForAgendaUpdates, 10000); // Executa a cada 10 segundos
 });

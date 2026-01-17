@@ -580,3 +580,11 @@ h2 {
     opacity: 0.9;
     font-weight: bold;
 }
+
+/* Style for rows with error status */
+.erro-row {
+    background-color: #f8d7da !important; /* Light red background */
+    color: #721c24; /* Dark red text */
+    text-decoration: line-through; /* Strikethrough text */
+    opacity: 0.8; /* Slightly faded */
+}

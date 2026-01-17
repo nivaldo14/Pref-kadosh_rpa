@@ -1,5 +1,5 @@
 wsgi.py
-.env
+
 .venv/
 __pycache__/
 *.pyc
