@@ -1,361 +1,345 @@
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 17:58:55.316815 ---\nErro inesperado: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-\nTraceback:
-Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 91, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
-    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
-    await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
-    raise AssertionError(
-AssertionError: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml"><head id="j_idt3"><meta http-equiv="origin-trial" content="A7vZI3v+Gz7JfuRolKNM4Aff6zaGuT7X0mf3wtoZTnKv6497cVMnhy03KDqX7kBz/q/iidW7srW31oQbBt4VhgoAAACUeyJvcmlnaW4iOiJodHRwczovL3d3dy5nb29nbGUuY29tOjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ==">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="theme-color" content="#418353">
+		<meta http-equiv="cache-control" content="max-age=0">
+        <meta http-equiv="cache-control" content="no-cache">
+        <meta http-equiv="expires" content="0">
+        <meta http-equiv="pragma" content="no-cache"><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/theme.css.xhtml?ln=primefaces-ultima-dark-green&amp;v=10.0.0&amp;e=10.0.0"><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/primeicons/primeicons.css.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/fa/font-awesome.css.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"><script type="text/javascript" async="" charset="utf-8" src="https://www.gstatic.com/recaptcha/releases/PoyoqOPhxBO7pBk68S4YbpHZ/recaptcha__pt_br.js" crossorigin="anonymous" integrity="sha384-TmAJBm+/+DEhxctaf4ar60dba/HD/C+SbhmW7ZBYBgi8UrjhZv7WDpzmLuoOZAK0"></script><script type="text/javascript" src="/logistica/javax.faces.resource/jquery/jquery.js.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"></script><script type="text/javascript" src="/logistica/javax.faces.resource/jquery/jquery-plugins.js.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"></script><script type="text/javascript" src="/logistica/javax.faces.resource/core.js.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"></script><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/components.css.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"><script type="text/javascript" src="/logistica/javax.faces.resource/components.js.xhtml?ln=primefaces&amp;v=10.0.0&amp;e=10.0.0"></script><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/css/ripple.css.xhtml?ln=ultima-layout"><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/css/layout-fertipar.css.xhtml?ln=fertipar-layout"><link type="text/css" rel="stylesheet" href="/logistica/javax.faces.resource/css/estilo.css.xhtml?ln=fertipar-layout"><script type="text/javascript">if(window.PrimeFaces){PrimeFaces.settings.locale='pt_BR';PrimeFaces.settings.viewId='/login.xhtml';PrimeFaces.settings.contextPath='/logistica';PrimeFaces.settings.cookiesSecure=false;PrimeFaces.settings.projectStage='Development';}</script>
+	<title>Logística</title><script type="text/javascript" src="/logistica/javax.faces.resource/js/ripple.js.xhtml?ln=ultima-layout"></script><script type="text/javascript" src="/logistica/javax.faces.resource/js/layout.js.xhtml?ln=ultima-layout"></script>
+    <script src="https://www.google.com/recaptcha/api.js?hl=pt-BR"></script>
+	<link rel="shortcut icon" type="image/x-icon" href="/logistica/javax.faces.resource/fertipar-layout/images/favicon.ico.xhtml"></head><body class="login-body">
+<form id="formLogistica" name="formLogistica" method="post" action="/logistica/login.xhtml" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="formLogistica" value="formLogistica" style="">
+<script id="j_idt10" type="text/javascript">verificaHabilitaCaptcha = function() {return PrimeFaces.ab({s:"j_idt10",f:"formLogistica",p:"j_idt10 ipMaquinaUsuario habilitaCaptcha",u:"ipMaquinaUsuario habilitaCaptcha",onco:function(xhr,status,args,data){exibeCaptcha();;},pa:arguments[0]});}</script><input id="ipMaquinaUsuario" type="hidden" name="ipMaquinaUsuario" value="" style=""><input id="habilitaCaptcha" type="hidden" name="habilitaCaptcha" value="true" style="">
+			<div class="card login-panel ui-fluid shadow-box ui-shadow-2">
+				<div class="ui-g">
+					<div class="ui-g-12" style="padding-top: 5px;"><img id="logoFilial" src="/logistica/javax.faces.resource/images/logos/filial_1.png.xhtml?ln=fertipar-layout" alt="" width="100%">
+						<br>
+					</div>
+					<div class="ui-g-13" style="padding-top: 5px;"><label id="ttlApp" class="ui-outputlabel ui-widget" style="color:#418353; padding-left:100px; padding-top:10px; font-size:15px;">Agendamento CIF</label>	
+				        <br>
+			        </div>
+					<div class="ui-g-12" style="padding-bottom: 10px;"><span id="j_idt15"></span><span class="md-inputfield" style="padding:0px;"><div id="filial" class="ui-selectonemenu ui-widget ui-state-default ui-corner-all ui-state-filled" aria-owns="filial_panel" role="combobox" aria-haspopup="listbox" aria-expanded="false" style="min-width: 188px;"><div class="ui-helper-hidden-accessible"><input id="filial_focus" name="filial_focus" type="text" autocomplete="off" aria-required="true" style=""></div><div class="ui-helper-hidden-accessible"><select id="filial_input" name="filial_input" tabindex="-1" autocomplete="off" aria-hidden="true"><option value="" data-escape="true">&amp;nbsp;</option><option value="1" selected="selected" data-escape="true">FERTIPAR PR</option><option value="73" data-escape="true">FERTIPAR MT</option><option value="34" data-escape="true">FERTIGRAN UBERABA</option><option value="48" data-escape="true">BANDEIRANTES</option><option value="21" data-escape="true">FERTINE</option><option value="55" data-escape="true">FERTIAL</option><option value="17" data-escape="true">PIRATINI</option><option value="44" data-escape="true">SUDESTE</option><option value="60" data-escape="true">FERTINOR</option><option value="13" data-escape="true">MARANHÃO</option><option value="39" data-escape="true">CANDEIAS</option><option value="43" data-escape="true">SUDESTE SERRA</option><option value="9" data-escape="true">FERTIGRAN CATALÃO</option><option value="80" data-escape="true">SUDESTE M.SOARES</option><option value="76" data-escape="true">BANDEIRANTES FÁBRICA</option><option value="59" data-escape="true">CANITAR</option><option value="11" data-escape="true">SUDESTE ARCEBURGO</option><option value="75" data-escape="true">DOURADOS</option><option value="72" data-escape="true">RONDON PR</option></select></div><label id="filial_label" class="ui-selectonemenu-label ui-inputfield ui-corner-all">FERTIPAR PR</label><div class="ui-selectonemenu-trigger ui-state-default ui-corner-right"><span class="ui-icon ui-icon-triangle-1-s ui-c"></span></div></div><label for="filial">Filial</label><div id="j_idt20" role="alert" aria-atomic="true" aria-live="polite" class="ui-message"></div></span>
+					</div>
+					<div class="ui-g-12" style="padding-top: 10px; padding-bottom: 10px;"><span class="md-inputfield" style="padding:0px;"><input id="j_username" name="j_username" type="text" value="kadosh_transp" class="ui-inputfield ui-inputtext ui-widget ui-state-default ui-corner-all ui-state-filled" aria-required="true" role="textbox" aria-disabled="false" aria-readonly="false" style=""><label for="j_username">Usuário</label><div id="j_idt24" role="alert" aria-atomic="true" aria-live="polite" class="ui-message"></div></span>
+					</div>
+					<div class="ui-g-12" style="padding-top: 10px; padding-bottom: 10px;"><span class="md-inputfield" style="padding:0px;"><input id="j_password" name="j_password" type="password" class="ui-password ui-inputfield ui-widget ui-state-default ui-corner-all" aria-required="true" role="textbox" aria-disabled="false" aria-readonly="false" style=""><label for="j_password">Senha</label><div id="j_idt28" role="alert" aria-atomic="true" aria-live="polite" class="ui-message"></div></span>
+	
+					</div>
+					<div id="divCaptcha" class="ui-g-8" style="padding-top: 10px; padding-bottom: 10px; display:none;"><span id="painelCaptcha" class="md-inputfield" style="padding:0px;">
+						  <div class="g-recaptcha" data-sitekey="6Lfb8WEUAAAAAErKxPnOIUiaqthp8at6uQIv2xTj"><div style="width: 304px; height: 78px;"><div><iframe title="reCAPTCHA" width="304" height="78" role="presentation" name="a-yuyn08y7mcgn" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/anchor?ar=1&amp;k=6Lfb8WEUAAAAAErKxPnOIUiaqthp8at6uQIv2xTj&amp;co=aHR0cHM6Ly9zaXNmZXJ3ZWIuZmVydGlwYXIuY29tLmJyOjQ0Mw..&amp;hl=pt-BR&amp;v=PoyoqOPhxBO7pBk68S4YbpHZ&amp;size=normal&amp;anchor-ms=20000&amp;execute-ms=30000&amp;cb=okn4z2pbwtf7"></iframe></div><textarea id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid rgb(193, 193, 193); margin: 10px 25px; padding: 0px; resize: none; display: none;"></textarea></div><iframe style="display: none;"></iframe></div></span>
+				    </div>
+	                <div class="ui-g-12" style="padding-top: 10px; padding-bottom: 8px;"><button id="btLoginId" name="btLoginId" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-left ui-state-hover" onclick="" style="margin-bottom:10px;" type="submit" role="button" aria-disabled="false"><span class="ui-button-icon-left ui-icon ui-c ui-icon-person"></span><span class="ui-button-text ui-c">Acessar</span></button><a href="/logistica/publico/consultaPublicaCarregamento.xhtml" class="ui-link ui-widget fa fa-truck" style="font-weight: bold;color:#418353"> Consulta de Carregamento</a><a href="/logistica/esqueciSenhaLogin.xhtml" class="ui-link ui-widget fa fa-question-circle" style="font-weight: bold;color:#418353"> Esqueci minha senha</a>
+					</div>
+	
+				</div>
+			</div>
+			<div class="login-footer" style="font-size: 65% !important;">
+				Grupo Fertipar.
+				Copyright 2018. Todos os direitos reservados.
+				(v3.63.0).</div><input type="hidden" name="javax.faces.ViewState" id="j_id1:javax.faces.ViewState:0" value="stateless" autocomplete="off" style="">
+</form>
+		<script type="text/javascript">
+		//<![CDATA[
+			function converter()
+			{				   
+			   var username = jQuery('#j_username').val();
+			   username = username.toUpperCase();
+			   jQuery('#j_username').val(username);
+			}
 
-\n--- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:23:36.161248 ---
+			function carregaEnderecoIp()
+			{
+			   verificaHabilitaCaptcha();
+            }
+
+            function exibeCaptcha(){ 
+
+            	 var flagHabilitaCaptcha = jQuery('#habilitaCaptcha').val();
+
+            	 if(flagHabilitaCaptcha == 'true'){ 
+
+            		 document.getElementById("divCaptcha").removeAttribute("style");
+            		 document.getElementById("divCaptcha").setAttribute("padding-top: 10px; padding-bottom: 10px;");
+               
+                 }
+
+           }
+
+//            exibeCaptcha();
+
+		//]]>
+	</script>
+<div id="textarea_simulator" style="position: absolute; top: 0px; left: 0px; visibility: hidden;"></div><div id="j_idt15_container" class="ui-growl ui-widget" aria-live="polite" style="z-index: 1001;"></div><div id="filial_panel" class="ui-selectonemenu-panel ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow ui-input-overlay"><div class="ui-selectonemenu-items-wrapper" style="max-height:200px"></div></div><div id="j_idt36" class="ui-confirm-dialog ui-dialog ui-widget ui-widget-content ui-corner-all ui-shadow ui-hidden-container" role="dialog" aria-describedby="j_idt36_content" aria-hidden="true" aria-modal="true" aria-labelledby="j_idt36_title" style="width: 250px; height: auto;"><div class="ui-dialog-titlebar ui-widget-header ui-helper-clearfix ui-corner-top"><span id="j_idt36_title" class="ui-dialog-title"></span><a href="#" class="ui-dialog-titlebar-icon ui-dialog-titlebar-close ui-corner-all" aria-label="Close" role="button"><span class="ui-icon ui-icon-closethick"></span></a></div><div class="ui-dialog-content ui-widget-content" id="j_idt36_content" style="height: auto;"><span class="ui-icon ui-confirm-dialog-severity"></span><span class="ui-confirm-dialog-message"></span></div><div class="ui-dialog-buttonpane ui-dialog-footer ui-widget-content ui-helper-clearfix"><button id="j_idt37" name="j_idt37" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-left ui-confirmdialog-yes GreenButton" type="button" role="button" aria-disabled="false"><span class="ui-button-icon-left ui-icon ui-c ui-icon-check"></span><span class="ui-button-text ui-c">OK</span></button></div></div><div class="ui-dialog-docking-zone"></div><div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); box-shadow: rgba(0, 0, 0, 0.2) 2px 2px 3px; position: absolute; transition: visibility linear 0.3s, opacity 0.3s linear; opacity: 0; visibility: hidden; z-index: 2000000000; left: 0px; top: -10000px;"><div style="width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; z-index: 2000000000; background-color: rgb(255, 255, 255); opacity: 0.05;"></div><div class="g-recaptcha-bubble-arrow" style="border: 11px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -11px; z-index: 2000000000;"></div><div class="g-recaptcha-bubble-arrow" style="border: 10px solid transparent; width: 0px; height: 0px; position: absolute; pointer-events: none; margin-top: -10px; z-index: 2000000000;"></div><div style="z-index: 2000000000; position: relative;"><iframe title="o desafio reCAPTCHA expira em dois minutos" name="c-yuyn08y7mcgn" frameborder="0" scrolling="no" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation allow-modals allow-popups-to-escape-sandbox allow-storage-access-by-user-activation" src="https://www.google.com/recaptcha/api2/bframe?hl=pt-BR&amp;v=PoyoqOPhxBO7pBk68S4YbpHZ&amp;k=6Lfb8WEUAAAAAErKxPnOIUiaqthp8at6uQIv2xTj&amp;bft=0dAFcWeA5M1QcL66_jeCqlCJXZDnHtwPX2KxrTZLn4giKHKuqATvSnX8PAvzzOz4R7sN6ci1D6s-fPeOt-ydmJD80DUtRlbxPERw" style="width: 100%; height: 100%;"></iframe></div></div></body></html>--- ERRO RPA TASK PROCESSOR EM 2026-01-19 11:23:53.786565 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 136, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:30:29.155469 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 11:40:21.390094 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 136, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 18:47:22.933540 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 11:59:03.587950 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 136, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:10:15.728825 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 12:09:36.627483 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 136, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:14:30.907821 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 13:07:53.661755 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 187, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:20:17.393315 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 13:14:33.344967 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 187, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:26:26.483353 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 13:25:31.950320 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 204, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:29:09.814606 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 13:28:21.774844 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 204, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:34:12.510826 ---
+--- ERRO RPA TASK PROCESSOR EM 2026-01-19 13:52:22.081252 ---
 Erro inesperado: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 Traceback:
 Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 204, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
     await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
     await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
     raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
 AssertionError: Locator expected to be visible
 Actual value: None
 Error: element(s) not found 
 Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:38:50.686433 ---
-Erro inesperado: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-Traceback:
-Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
-    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
-    await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
-    raise AssertionError(
-AssertionError: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:41:10.855897 ---
-Erro inesperado: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-Traceback:
-Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
-    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
-    await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
-    raise AssertionError(
-AssertionError: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:44:43.563898 ---
-Erro inesperado: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-Traceback:
-Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
-    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
-    await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
-    raise AssertionError(
-AssertionError: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-
---- ERRO RPA TASK PROCESSOR EM 2026-01-17 19:51:03.582583 ---
-Erro inesperado: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
-
-Traceback:
-Traceback (most recent call last):
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\backend\rpa_task_processor.py", line 92, in process_agendamento_main_task
-    await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
-    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
-    await self._expect_impl(
-  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\front_postgres\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
-    raise AssertionError(
-AssertionError: Locator expected to be visible
-Actual value: None
-Error: element(s) not found 
-Call log:
-  - Expect "to_be_visible" with timeout 30000ms
-  - waiting for get_by_role("grid").first
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 

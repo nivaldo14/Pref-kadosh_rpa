@@ -19,6 +19,10 @@ async def scrape_fertipar_data(config=None):
     
     scraped_data = []
     
+    if not config.senha_site or not config.senha_site.strip():
+        print("ERRO CRÍTICO: A senha do site para o robô não está configurada.")
+        raise ValueError("Senha do robô não configurada. Por favor, acesse a página de 'Administração -> Configurações do Robô' e defina a senha.")
+    
     # Extract config details
     url_acesso = config.url_acesso
     usuario_site = config.usuario_site
@@ -26,7 +30,7 @@ async def scrape_fertipar_data(config=None):
     head_evento = config.head_evento
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=not head_evento)
         page = await browser.new_page()
 
         try:
@@ -49,8 +53,18 @@ async def scrape_fertipar_data(config=None):
                     await page.get_by_role("option", name=config.filial).click()
                 
                 await page.click(login_button_selector)
-                await page.wait_for_load_state('networkidle', timeout=30000)
-                print("Login realizado com sucesso.")
+                
+                try:
+                    # Wait for navigation away from the login page (i.e., 'login.xhtml' should no longer be in the URL)
+                    await page.wait_for_url(lambda url: "login.xhtml" not in url, timeout=30000)
+                    print("Navegação pós-login bem-sucedida.")
+                    await page.wait_for_load_state('networkidle', timeout=30000)
+                    print("Estado de carregamento da rede 'networkidle' alcançado após login.")
+                except TimeoutError:
+                    print("Aviso: Falha na navegação pós-login. Provavelmente credenciais inválidas, problema de rede ou página travou.")
+                    await page.screenshot(path="login_failure_screenshot.png")
+                    print("Screenshot 'login_failure_screenshot.png' salvo para depuração.")
+                    return None # Indica falha no login, interrompe o processo.
             else:
                 print("Já logado, pulando etapa de login.")
 
@@ -79,8 +93,14 @@ async def scrape_fertipar_data(config=None):
                         scraped_data.append(row_data)
                     else:
                         print(f"Aviso: Linha pulada por ter contagem de colunas diferente. Esperado {len(headers)}, encontrado {len(cols)}.")
-            except (TimeoutError, AssertionError):
-                print("Aviso: Tabela de dados não encontrada (Timeout ou Assertion). Nenhuma cotação disponível ou a estrutura da página mudou.")
+            except (TimeoutError, AssertionError) as e:
+                print(f"ERRO: Tabela de dados ('{thead_selector}') não encontrada após o tempo de espera. Salvando screenshot e HTML para depuração.")
+                print(f"Playwright Error: {e}")
+                await page.screenshot(path="rpa_error_screenshot.png")
+                html_content = await page.content()
+                with open("rpa_task_processor_error.log", "w", encoding='utf-8') as f:
+                    f.write(html_content)
+                print("Artefatos de depuração ('rpa_error_screenshot.png', 'rpa_task_processor_error.log') salvos.")
                 return [] # Retorna uma lista vazia para indicar que não há dados, sem ser um erro fatal
         
         except Exception as e:

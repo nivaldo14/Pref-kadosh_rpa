@@ -61,7 +61,7 @@ async def process_agendamento_main_task(config, agenda_item, motorista, caminhao
     print(f"Iniciando automação para Protocolo: {protocolo_procurado}, Pedido: {pedido_procurado}, CPF: {nro_cpf}")
 
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=run_headless, slow_mo=50) # headless agora é controlado por run_headless
+        browser = await playwright.chromium.launch(headless=run_headless, slow_mo=50, args=["--start-fullscreen"]) # headless agora é controlado por run_headless
         context = await browser.new_context()
         page = await context.new_page()
 
@@ -101,6 +101,62 @@ async def process_agendamento_main_task(config, agenda_item, motorista, caminhao
                 botao_agendar = linha_do_item.locator(':text("Agendar Pedido")')
                 await botao_agendar.click()
                 
+                # --- INÍCIO PREENCHIMENTO CONTATO/TELEFONE (ANTES DO IFRAME) ---
+                print("\n--- Iniciando preenchimento de Contato e Telefone ---")
+                try:
+                    # Esperar que o campo de contato apareça.
+                    print("Aguardando o formulário de contato carregar...")
+                    # O locator exato para o campo de contato pode precisar de ajuste.
+                    # Vamos usar um locator genérico por enquanto e esperar que ele seja editável.
+                    # Baseado no código existente, o campo está dentro de um container.
+                    # Vamos esperar o container e depois pegar o input.
+                    #contact_container_locator = page.locator('[id="form-minhas-cotacoes:placas-reboque"]')
+                    #await expect(contact_container_locator).to_be_visible(timeout=10000)
+                    print("Container de contato/telefone detectado.")
+
+                    # Preencher Contato
+                    if config.contato:
+                        print("Tentando localizar e preencher o campo 'Contato*'...")
+                        contato_textbox = page.get_by_role("textbox", name="Contato*")
+                        try:
+                            await expect(contato_textbox).to_be_visible(timeout=5000)
+                            await contato_textbox.fill(config.contato)
+                            print(f"[SUCESSO] Campo 'Contato*' preenchido com: {config.contato}")
+                        except TimeoutError:
+                            print(f"[FALHA] Campo 'Contato*' não encontrado ou não visível. Valor esperado: {config.contato}")
+                        except Exception as e:
+                            print(f"[ERRO] Ocorreu um erro inesperado ao tentar preencher 'Contato*': {e}")
+                    else:
+                        print("[INFO] Campo 'contato' não configurado no config. Pulando preenchimento.")
+
+                    # Preencher DDD e Telefone
+                    if config.telefone:
+                        print("Preenchendo DDD e Telefone...")
+                        ddd_match = re.search(r'\((\d+)\)', config.telefone)
+                        numero_match = re.search(r'\)\s*(.*)', config.telefone)
+                        
+                        if ddd_match:
+                            ddd = ddd_match.group(1)
+                            ddd_input = page.get_by_role("textbox", name="DDD*")
+                            await expect(ddd_input).to_be_editable(timeout=5000)
+                            await ddd_input.fill(ddd)
+                            print(f"[SUCESSO] Campo 'DDD*' preenchido com: {ddd}")
+                        
+                        if numero_match:
+                            numero = numero_match.group(1)
+                            tel_input = page.get_by_role("textbox", name="Telefone*")
+                            await expect(tel_input).to_be_editable(timeout=5000)
+                            await tel_input.fill(numero)
+                            print(f"[SUCESSO] Campo 'Telefone*' preenchido com: {numero}")
+                    else:
+                        print("[INFO] Campo 'telefone' não configurado. Pulando.")
+
+                except TimeoutError as te:
+                    print(f"[AVISO] Timeout ao tentar preencher Contato/Telefone antes do iframe. O fluxo pode ter mudado ou os campos não são esperados aqui. Erro: {te}")
+                except Exception as e:
+                    print(f"[AVISO] Ocorreu um erro inesperado ao preencher Contato/Telefone antes do iframe. Erro: {e}")
+                # --- FIM PREENCHIMENTO CONTATO/TELEFONE ---
+
                 element_to_click = page.locator("[id=\"form-minhas-cotacoes:j_idt126\"]")
                 await expect(element_to_click).to_be_visible(timeout=10000)
                 await element_to_click.click()
@@ -142,6 +198,8 @@ async def process_agendamento_main_task(config, agenda_item, motorista, caminhao
                     await expect(botao_sim).to_be_visible(timeout=5000)
                     await botao_sim.click()
                     print("[SUCESSO] Botão 'Sim' clicado como alternativa.")
+
+                # O bloco de preenchimento de placa foi removido conforme solicitado.
                 
                 # --- ETAPA FINAL: PREENCHER CPF NO CADASTRO DE VEÍCULO/MOTORISTA (SE NECESSÁRIO) ---
                 # A lógica do main.py sugere que um segundo campo CPF pode aparecer.
@@ -201,4 +259,9 @@ async def process_agendamento_main_task(config, agenda_item, motorista, caminhao
                 return {"success": False, "message": tb_str} # Return full traceback string for log_retorno
 
         finally:
+            print("\n[MODO DEBUG] Navegador permanecerá aberto para inspeção.")
+            print("Pressione ENTER no console para fechar o navegador e finalizar a automação.")
+            # Use asyncio.to_thread para rodar input() sem bloquear o loop de eventos
+            await asyncio.to_thread(input, "") 
             await browser.close()
+            print("Navegador fechado por solicitação do usuário.")
