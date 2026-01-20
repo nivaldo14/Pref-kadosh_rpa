@@ -1212,3 +1212,29 @@ Call log:
   - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 16:08:14.962268 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\backend\rpa_task_processor.py", line 267, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+

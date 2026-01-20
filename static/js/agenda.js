@@ -1025,8 +1025,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedMotorista) {
                 detailsDiv.html(`
                     <div class="subgrid-details-card">
-                        <div><strong>CPF:</strong> ${selectedMotorista.cpf || 'N/A'}</div>
-                        <div><strong>Telefone:</strong> ${selectedMotorista.telefone || 'N/A'}</div>
+                        <div><strong>CPF:</strong>${selectedMotorista.cpf || 'N/A'}</div>
+                        <div><strong>Telefone:</strong>${selectedMotorista.telefone || 'N/A'}</div>
                     </div>
                 `);
             }

@@ -251,31 +251,39 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 )
                 await expect(campo_cpf_iframe).to_be_editable(timeout=10000)
                 
-                # --- NOVO: Clicar "Pesquisar" imediatamente após encontrar o campo CPF (DIAGNÓSTICO) ---
+                # Preenchendo o CPF lentamente
+                print(f"Preenchendo o campo CPF com: {nro_cpf}")
+                await campo_cpf_iframe.type(nro_cpf, delay=150) # Adiciona um delay de 150ms entre cada caractere
+                print("[SUCESSO] Campo CPF preenchido.")
+
+                # Clicar no botão 'Pesquisar'
                 botao_pesquisar_iframe = iframe_content.get_by_role("button", name=" Pesquisar")
                 await expect(botao_pesquisar_iframe).to_be_visible(timeout=5000)
-                await botao_pesquisar_iframe.evaluate("element => element.click()") # Usando JavaScript click
-                print("Botão Pesquisar foi pressionado (DIAGNÓSTICO - CPF não preenchido).")
-                
-                if not run_headless:
-                    print("RPA pausado após clicar no botão 'Pesquisar' para inspeção (DIAGNÓSTICO).")
-                    await page.pause() # Pausar para inspeção após o clique
-                
+                await botao_pesquisar_iframe.click()
+                print("Botão 'Pesquisar' foi clicado após preencher o CPF.")
+
+                # Aguardar um momento para os resultados da pesquisa aparecerem
+                await page.wait_for_timeout(2000)
+
                 # --- LÓGICA CONDICIONAL: TENTAR 'SELECIONAR' E, SE FALHAR, TENTAR 'SIM' ---
                 try:
+                    # Tenta clicar em 'Selecionar' primeiro
+                    print("Tentando clicar no botão 'Selecionar'...")
                     botao_selecionar = iframe_content.get_by_role("button", name=" Selecionar")
-                    await expect(botao_selecionar).to_be_visible(timeout=5000)
+                    await expect(botao_selecionar).to_be_visible(timeout=7000) # Aumentar timeout para dar tempo da busca acontecer
                     await botao_selecionar.click()
                     print("[SUCESSO] Botão 'Selecionar' clicado.")
                 except TimeoutError:
-                    print("[INFO] Botão 'Selecionar' não encontrado. Tentando alternativa 'Sim'.")
+                    # Se 'Selecionar' não aparecer, pode ser que o motorista já esteja cadastrado
+                    # e o sistema pergunte diretamente para confirmar
+                    print("[INFO] Botão 'Selecionar' não encontrado. Tentando alternativa 'Sim'...")
                     botao_sim = iframe_content.get_by_role("button", name=" Sim")
                     await expect(botao_sim).to_be_visible(timeout=5000)
                     await botao_sim.click()
                     print("[SUCESSO] Botão 'Sim' clicado como alternativa.")
 
-                print("Automação de agendamento concluída com sucesso (DIAGNÓSTICO - CPF não preenchido).")
-                return {"success": True, "message": "Agendamento processado com sucesso (apenas clique em Pesquisar para diagnóstico)."}
+                print("Automação de agendamento concluída com sucesso.")
+                return {"success": True, "message": "Agendamento processado com sucesso."}
             else:
                 message = f"Não há dados para pesquisar - motivo: sem agenda no site fertipar para Protocolo {protocolo_procurado} e Pedido {pedido_procurado}."
                 print(message)

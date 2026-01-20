@@ -957,7 +957,7 @@ def execute_agenda_task(agenda_id):
     db.session.commit()
 
     try:
-        run_headless_mode = not config.head_evento
+        run_headless_mode = False # Forçado para navegador visível a pedido do usuário
         print(f"Chamando process_agendamento_main_task com run_headless={run_headless_mode}")
         result = asyncio.run(process_agendamento_main_task(rpa_params, run_headless=run_headless_mode))
         

@@ -47,26 +47,31 @@
 }
 
 .fertipar-subgrid-row .subgrid-content {
-    padding: 8px 15px !important; /* Padding ajustado para o conteúdo do subgrid */
-    background-color: #f0f3f6 !important; /* Cor de fundo mais clara */
-    border: none !important; /* Remover borda interna */
-    border-top: 1px solid #e9ecef !important; /* Apenas borda superior */
+    padding: 15px 20px !important; /* Padding generoso */
+    background-color: #eef2f7 !important; /* Cor de fundo suave, azulada */
+    border-top: 1px solid #dee2e6 !important;
+    display: flex;
+    align-items: flex-start; /* Alinha os itens no topo */
+    gap: 15px; /* Espaço entre os elementos flex */
 }
 
+
 .fertipar-subgrid-row .form-group {
-    margin-bottom: 0.5rem; /* Espaçamento reduzido nos form-groups do subgrid */
+    margin-bottom: 0; /* Remover margem, o gap cuidará do espaçamento */
 }
 
 .fertipar-subgrid-row label {
-    font-size: 0.75rem; /* Fontes menores para labels do subgrid */
-    margin-bottom: 0.2rem;
-    color: #6c757d;
+    font-size: 0.9rem; /* Fonte maior para labels */
+    margin-bottom: 0.3rem;
+    color: #495057; /* Cor mais escura para melhor legibilidade */
+    font-weight: 600;
 }
 
+
 .fertipar-subgrid-row .form-control-sm {
-    font-size: 0.75rem; /* Fontes menores para inputs do subgrid */
-    padding: 0.25rem 0.5rem; /* Padding ajustado */
-    height: calc(1.8rem + 2px); /* Altura menor */
+    font-size: 0.9rem; /* Fonte maior para inputs */
+    padding: 0.35rem 0.7rem; /* Padding ajustado */
+    height: auto; /* Altura automática */
 }
 
 /* Estilo para os botões do toggle subgrid */
@@ -85,8 +90,12 @@
 
 /* Estilos para o dropdown customizado dentro do subgrid */
 .fertipar-subgrid-row .custom-select-container {
-    font-size: 0.8em; /* Ajustar fonte do container do select */
+    font-size: 0.9rem; /* Fonte ajustada */
+    flex-grow: 1; /* Permite que os containers de select cresçam */
+    display: flex;
+    flex-direction: column;
 }
+
 
 .fertipar-subgrid-row .custom-select-dropdown {
     box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.1); /* Sombra mais suave */
@@ -95,8 +104,8 @@
 }
 
 .fertipar-subgrid-row .custom-select-dropdown .list-group-item {
-    padding: 0.3rem 0.6rem; /* Padding reduzido nas opções */
-    font-size: 0.8em; /* Fontes menores nas opções */
+    padding: 0.3rem 0.6rem; /* Padding reduzido */
+    font-size: 0.8em; /* Fonte menor */
 }
 
 #fertiparModal .table-responsive {
@@ -144,20 +153,27 @@
     flex-grow: 1; /* Faz o body preencher o espaço disponível */
     overflow-y: auto; /* Adiciona scroll ao body se o conteúdo for muito grande */
 }
-/* Estilos para o card de detalhes no subgrid */
+/* Estilos para o card de detalhes no subgrid (MODERNIZADO) */
 .subgrid-details-card {
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-    padding: 0.5rem;
+    background-color: #ffffff; /* Fundo branco */
+    border: 1px solid #dee2e6; /* Borda mais sutil */
+    border-radius: 8px; /* Bordas arredondadas */
+    padding: 0.75rem; /* Padding interno */
     margin-top: 0.5rem;
-    font-size: 0.85em;
+    font-size: 0.8rem; /* Fonte menor para as informações */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Sombra suave */
+    display: grid;
+    grid-template-columns: auto 1fr; /* Coluna para label e para valor */
+    gap: 0.25rem 0.75rem; /* Espaçamento entre linhas e colunas */
+    align-items: center;
 }
 
 .subgrid-details-card div {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0; /* Removido, o gap cuida disso */
+    display: contents; /* Faz os divs filhos se comportarem como parte do grid */
 }
 
-.subgrid-details-card div:last-child {
-    margin-bottom: 0;
+.subgrid-details-card strong {
+    font-weight: 600;
+    color: #495057;
 }
