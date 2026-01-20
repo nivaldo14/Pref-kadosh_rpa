@@ -343,3 +343,842 @@ Call log:
   - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
 
 
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 08:13:06.373822 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 170, in process_agendamento_main_task
+    campo_cpf = await try_locate_and_screenshot(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 45, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 08:39:42.812271 ---
+Erro inesperado: Locator expected to be editable
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_editable" with timeout 5000ms
+  - waiting for locator("[id=\"form-minhas-cotacoes:placas-reboque_input\"]")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 107, in process_agendamento_main_task
+    await expect(reboque_input).to_be_editable(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20179, in to_be_editable
+    await self._impl_obj.to_be_editable(editable=editable, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 675, in to_be_editable
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be editable
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_editable" with timeout 5000ms
+  - waiting for locator("[id=\"form-minhas-cotacoes:placas-reboque_input\"]")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:03:10.825015 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 155, in process_agendamento_main_task
+    campo_cpf_iframe = await try_locate_and_screenshot(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 23, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:28:27.687720 ---
+Erro inesperado: Locator.click: Target page, context or browser has been closed
+Call log:
+  - waiting for locator("[id='form-minhas-cotacoes:uf-reboque-1_label']")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 165, in process_agendamento_main_task
+    await page.locator("[id='form-minhas-cotacoes:uf-reboque-1_label']").click()
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 15609, in click
+    await self._impl_obj.click(
+    ...<10 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_locator.py", line 162, in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_frame.py", line 566, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Locator.click: Target page, context or browser has been closed
+Call log:
+  - waiting for locator("[id='form-minhas-cotacoes:uf-reboque-1_label']")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:49:03.593354 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 249, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:51:24.465417 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 229, in process_agendamento_main_task
+    campo_cpf_iframe = await try_locate_and_screenshot(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 23, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:57:36.159701 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 229, in process_agendamento_main_task
+    campo_cpf_iframe = await try_locate_and_screenshot(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 23, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 09:58:30.307087 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 229, in process_agendamento_main_task
+    campo_cpf_iframe = await try_locate_and_screenshot(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 23, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:03:11.313365 ---
+Erro inesperado: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 229, in process_agendamento_main_task
+    campo_cpf_iframe = await try_locate_and_screenshot(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 23, in try_locate_and_screenshot
+    raise Exception(f"Elemento '{element_description}' não foi encontrado por nenhum dos seletores fornecidos.")
+Exception: Elemento 'Campo 'Nro.Cpf'' não foi encontrado por nenhum dos seletores fornecidos.
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:08:38.765494 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 249, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:09:09.540666 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 249, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:15:39.944038 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 255, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:16:09.909804 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 255, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:46:29.370273 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-filled" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 251, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-filled" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 10:52:22.516505 ---
+Erro inesperado: Locator expected to have Value '08868219913'
+Actual value:  
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value ""
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 251, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '08868219913'
+Actual value:  
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value ""
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 11:06:27.881733 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 256, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 11:15:03.898816 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value:  
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    6 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "___.___.___-__"
+    2 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus ui-state-hover" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "___.___.___-__"
+    - locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+    - unexpected value ""
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value:  
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    6 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "___.___.___-__"
+    2 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus ui-state-hover" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "___.___.___-__"
+    - locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+    - unexpected value ""
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 11:23:51.619746 ---
+Erro inesperado: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 11:28:38.132885 ---
+Erro inesperado: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 11:34:56.976105 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 12:01:21.590478 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 12:03:05.374048 ---
+Erro inesperado: Locator expected to have Value '11446132994'
+Actual value: 114.461.329-94 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "114.461.329-94"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '11446132994'
+Actual value: 114.461.329-94 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "114.461.329-94"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 12:44:42.256463 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 12:48:18.185936 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 13:05:26.575954 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    8 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    8 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 13:07:59.029723 ---
+Erro inesperado: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '08868219913'
+Actual value: 088.682.199-13 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "088.682.199-13"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 13:20:15.469284 ---
+Erro inesperado: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 250, in process_agendamento_main_task
+    await expect(campo_cpf_iframe).to_have_value(nro_cpf, timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 19758, in to_have_value
+    await self._impl_obj.to_have_value(value=value, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 481, in to_have_value
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to have Value '09519609970'
+Actual value: 095.196.099-70 
+Call log:
+  - Expect "to_have_value" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.locator("input[id*='Cpf']")
+    9 × locator resolved to <input type="text" maxlength="14" role="textbox" inputmode="text" aria-required="true" placeholder="Nro.Cpf" aria-disabled="false" aria-readonly="false" id="formPesquisaTransp:txtCpf" name="formPesquisaTransp:txtCpf" class="ui-inputfield ui-inputmask ui-widget ui-state-default ui-corner-all ui-state-focus" onchange="PrimeFaces.ab({s:"formPesquisaTransp:txtCpf",e:"change",f:"formPesquisaTransp",p:"formPesquisaTransp:txtCpf",u:"formPesquisaTransp:txtNome"});"/>
+      - unexpected value "095.196.099-70"
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 14:02:18.574837 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 267, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 14:14:46.671330 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 267, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
+--- ERRO RPA TASK PROCESSOR EM 2026-01-20 14:17:17.361655 ---
+Erro inesperado: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\backend\rpa_task_processor.py", line 267, in process_agendamento_main_task
+    await expect(botao_selecionar).to_be_visible(timeout=5000)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 20378, in to_be_visible
+    await self._impl_obj.to_be_visible(visible=visible, timeout=timeout)
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 765, in to_be_visible
+    await self._expect_impl(
+    ...<5 lines>...
+    )
+  File "C:\Users\nivaldo.suave\Desktop\nivaldo\projetos\pessoal\kdosh\vrsRPA\kadosh-rpa\.venv\Lib\site-packages\playwright\_impl\_assertions.py", line 85, in _expect_impl
+    raise AssertionError(
+        f"{out_message}\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}"
+    )
+AssertionError: Locator expected to be visible
+Actual value: None
+Error: element(s) not found 
+Call log:
+  - Expect "to_be_visible" with timeout 5000ms
+  - waiting for locator("iframe[title=\"Cadastro de Motorista Autônomo\"]").content_frame.get_by_role("button", name=" Selecionar")
+
+
