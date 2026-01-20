@@ -144,3 +144,20 @@
     flex-grow: 1; /* Faz o body preencher o espaço disponível */
     overflow-y: auto; /* Adiciona scroll ao body se o conteúdo for muito grande */
 }
+/* Estilos para o card de detalhes no subgrid */
+.subgrid-details-card {
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.85em;
+}
+
+.subgrid-details-card div {
+    margin-bottom: 0.25rem;
+}
+
+.subgrid-details-card div:last-child {
+    margin-bottom: 0;
+}

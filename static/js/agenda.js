@@ -1023,7 +1023,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input.hasClass('motorista-subgrid-input')) {
             const selectedMotorista = cachedMotoristas.find(m => m.id == selectedId);
             if (selectedMotorista) {
-                detailsDiv.html(`<small class="text-muted"><strong>CPF:</strong> ${selectedMotorista.cpf || 'N/A'} | <strong>Telefone:</strong> ${selectedMotorista.telefone || 'N/A'}</small>`);
+                detailsDiv.html(`
+                    <div class="subgrid-details-card">
+                        <div><strong>CPF:</strong> ${selectedMotorista.cpf || 'N/A'}</div>
+                        <div><strong>Telefone:</strong> ${selectedMotorista.telefone || 'N/A'}</div>
+                    </div>
+                `);
             }
         } else if (input.hasClass('caminhao-subgrid-input')) {
             const selectedCaminhao = cachedCaminhoes.find(c => c.id == selectedId);
@@ -1031,9 +1036,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reboques = ['1', '2', '3'].map(i => {
                     const placa = selectedCaminhao[`placa_reboque${i}`];
                     const uf = selectedCaminhao[`uf${i}`];
-                    return placa ? `Reb${i}: ${placa} (${uf || ''})` : null;
-                }).filter(Boolean).join(' | ');
-                detailsDiv.html(`<small class="text-muted"><strong>Carroceria:</strong> ${selectedCaminhao.tipo_carroceria || 'N/A'}<br>${reboques}</small>`);
+                    return placa ? `<div><strong>Reb${i}:</strong> ${placa} (${uf || ''})</div>` : null;
+                }).filter(Boolean).join('');
+                detailsDiv.html(`
+                    <div class="subgrid-details-card">
+                        <div><strong>Carroceria:</strong> ${selectedCaminhao.tipo_carroceria || 'N/A'}</div>
+                        ${reboques}
+                    </div>
+                `);
             }
         }
     });
