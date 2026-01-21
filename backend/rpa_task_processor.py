@@ -336,7 +336,8 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     print("[MODO TESTE] O botão 'Salvar' foi identificado, mas não será clicado.")
                 else:
                     print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
-                    await salvar_button.click()
+                    # Força o clique no botão 'Salvar' para garantir a execução, mesmo que haja elementos sobrepostos.
+                    await salvar_button.click(force=True)
                     print("[MODO PRODUCAO] O botão 'Salvar' foi clicado com sucesso.")
 
                 # O navegador será fechado automaticamente ao finalizar a automação.
