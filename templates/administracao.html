@@ -81,11 +81,11 @@
                     <div class="form-row mb-2 align-items-center">
                         <div class="col-md-6">
                             <p class="small font-weight-bold mb-1">Mostrar eventos do robô em tela?</p>
-                            <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="head_evento" name="head_evento" {% if configuracao and configuracao.head_evento %}checked{% endif %}><label class="custom-control-label" for="head_evento"></label></div>
+                            <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="head_evento" name="head_evento" {% if configuracao and configuracao.head_evento %}checked{% endif %}><label class="custom-control-label" for="head_evento"><span class="switch-label-text"></span></label></div>
                         </div>
                         <div class="col-md-6">
                             <p class="small font-weight-bold mb-1">Modo de Execução:</p>
-                             <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="modo_execucao" name="modo_execucao" {% if configuracao and configuracao.modo_execucao == 'agendado' %}checked{% endif %}><label class="custom-control-label" for="modo_execucao">{% if configuracao and configuracao.modo_execucao == 'agendado' %}Agendado{% else %}Teste{% endif %}</label></div>
+                             <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="modo_execucao" name="modo_execucao" {% if configuracao and configuracao.modo_execucao == 'agendado' %}checked{% endif %}><label class="custom-control-label" for="modo_execucao"><span class="switch-label-text"></span></label></div>
                         </div>
                     </div>
                     <hr class="my-2">
@@ -150,33 +150,36 @@
                 return headers;
             }
             
-            // Helper function to update switch labels
-            function setupSwitch(switchId, onText, offText) {
+            // Helper function to update switch labels and colors
+            function setupSwitch(switchId, onText, offText, onColorClass = '', offColorClass = '') {
                 const switchElement = document.getElementById(switchId);
                 if (!switchElement) return;
 
-                const labelTextElement = switchElement.nextElementSibling.querySelector('.switch-label-text');
+                const labelElement = switchElement.nextElementSibling; // The <label> element
+                const labelTextElement = labelElement.querySelector('.switch-label-text');
 
-                function updateLabel() {
+                function updateLabelAndColor() {
                     if (switchElement.checked) {
                         labelTextElement.textContent = onText;
+                        labelElement.classList.remove(offColorClass);
+                        labelElement.classList.add(onColorClass);
                     } else {
                         labelTextElement.textContent = offText;
+                        labelElement.classList.remove(onColorClass);
+                        labelElement.classList.add(offColorClass);
                     }
                 }
 
                 // Initial update and event listener
-                updateLabel();
-                switchElement.addEventListener('change', updateLabel);
+                updateLabelAndColor();
+                switchElement.addEventListener('change', updateLabelAndColor);
             }
 
-            // Setup for the first switch
-            setupSwitch('head_evento', 'Exibição de eventos na tela Ativada', 'Exibição de eventos na tela Desativada');
+            // Setup for 'Mostrar eventos do Robo em Tela?' switch
+            setupSwitch('head_evento', 'Mostrar evento em Tela!', 'Evento background!', 'text-danger', 'text-success');
 
-            // Setup for the second switch
-            setupSwitch('modo_execucao', 'Modo Agendado Ativo', 'Modo de Teste Ativo');
-
-
+            // Setup for 'Modo de Execução' switch
+            setupSwitch('modo_execucao', 'Agendamento Permitido', 'NÃO Permite Agendar!');
         });
     </script>
 {% endblock %}

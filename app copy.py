@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, extract
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import OperationalError
 from flask_migrate import Migrate
@@ -256,15 +255,6 @@ class ConfiguracaoRobo(db.Model):
 
     # O método check_senha_site não é mais necessário, pois não estamos usando hashes.
 
-class RpaSessao(db.Model):
-    __tablename__ = 'rpa_sessao'
-    id = db.Column(db.Integer, primary_key=True, default=1)
-    storage_state = db.Column(JSONB)
-    last_updated = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now())
-    
-    __table_args__ = (
-        db.CheckConstraint('id = 1', name='single_row_check'),
-    )
 
 # --- Routes ---
 @app.route('/teste')
@@ -902,7 +892,6 @@ def clear_agendas():
 def execute_agenda_task(agenda_id):
     """
     Executes the Playwright RPA task for a specific agenda item.
-    Handles loading and saving of the RPA session state.
     """
     print(f"--- Iniciando execute_agenda_task para agenda_id: {agenda_id} ---")
     agenda = db.session.get(Agenda, agenda_id)
@@ -918,16 +907,6 @@ def execute_agenda_task(agenda_id):
 
     if not motorista or not caminhao:
         return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
-
-    # --- LÓGICA DE SESSÃO: Carregar estado do banco de dados ---
-    print("--- Carregando estado de sessão do RPA do banco de dados... ---")
-    sessao_rpa = db.session.query(RpaSessao).first()
-    storage_state = sessao_rpa.storage_state if sessao_rpa else None
-    if storage_state:
-        print("Estado de sessão encontrado.")
-    else:
-        print("Nenhum estado de sessão encontrado. Será necessário um novo login.")
-
 
     # --- Estruturar todos os dados em um único dicionário (JSON) ---
     rpa_params = {
@@ -967,14 +946,11 @@ def execute_agenda_task(agenda_id):
             "uf2": caminhao.uf2,
             "placa_reboque3": caminhao.placa_reboque3,
             "uf3": caminhao.uf3,
-        },
-        "storage_state": storage_state # Passa o estado da sessão para o robô
+        }
     }
     
     print("\n--- PARÂMETROS PARA EXECUÇÃO DO RPA (JSON) ---")
-    # Não imprimir o storage_state para não poluir o log
-    params_to_print = {k: v for k, v in rpa_params.items() if k != 'storage_state'}
-    print(json.dumps(params_to_print, indent=4))
+    print(json.dumps(rpa_params, indent=4))
     print("--------------------------------------------\n")
     
     agenda.status = 'processando'
@@ -985,29 +961,15 @@ def execute_agenda_task(agenda_id):
         print(f"Chamando process_agendamento_main_task com run_headless={run_headless_mode}")
         result = asyncio.run(process_agendamento_main_task(rpa_params, run_headless=run_headless_mode))
         
-        # --- LÓGICA DE SESSÃO: Salvar novo estado se existir ---
-        new_storage_state = result.get('new_storage_state')
-        if new_storage_state:
-            print("--- SALVANDO NOVO ESTADO DA SESSÃO NO BANCO DE DADOS ---")
-            if sessao_rpa:
-                sessao_rpa.storage_state = new_storage_state
-                sessao_rpa.last_updated = datetime.now(timezone.utc)
-            else:
-                sessao_rpa = RpaSessao(storage_state=new_storage_state)
-                db.session.add(sessao_rpa)
-            db.session.commit()
-            print("--- Novo estado da sessão salvo com sucesso. ---")
-
-
         if result['success']:
             agenda.status = 'agendado'
-            # agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso.') # log_retorno não existe
+            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso.')
             db.session.commit()
             return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso.')))
         else:
             agenda.status = 'erro'
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA.')
-            # agenda.log_retorno = log_content_for_db # log_retorno não existe
+            agenda.log_retorno = log_content_for_db
 
             try:
                 db.session.commit()
@@ -1015,7 +977,7 @@ def execute_agenda_task(agenda_id):
                 db.session.rollback()
                 print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id}: {commit_e}")
                 try:
-                    # agenda.log_retorno = f"Original commit failed: {commit_e}" # log_retorno não existe
+                    agenda.log_retorno = f"Original commit failed: {commit_e}"
                     db.session.commit()
                 except Exception as final_e:
                     db.session.rollback()
@@ -1026,7 +988,7 @@ def execute_agenda_task(agenda_id):
     except Exception as e:
         db.session.rollback()
         agenda.status = 'erro'
-        # agenda.log_retorno = f"Erro inesperado no servidor: {e}" # log_retorno não existe
+        agenda.log_retorno = f"Erro inesperado no servidor: {e}"
         db.session.commit()
         print(f"Erro ao executar automação para agenda {agenda_id}: {e}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô."), 500
@@ -1037,7 +999,6 @@ def execute_agenda_task_dev_mode(agenda_id):
     """
     Executes the Playwright RPA task for a specific agenda item in non-headless mode,
     passing all necessary data as a single JSON object.
-    Handles loading and saving of the RPA session state.
     """
     print(f"--- Iniciando execute_agenda_task_dev_mode para agenda_id: {agenda_id} ---")
     agenda = db.session.get(Agenda, agenda_id)
@@ -1054,16 +1015,6 @@ def execute_agenda_task_dev_mode(agenda_id):
     caminhao = db.session.get(Caminhao, agenda.caminhao_id)
     if not motorista or not caminhao:
         return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
-
-    # --- LÓGICA DE SESSÃO: Carregar estado do banco de dados ---
-    print("--- Carregando estado de sessão do RPA do banco de dados (Dev Mode)... ---")
-    sessao_rpa = db.session.query(RpaSessao).first()
-    storage_state = sessao_rpa.storage_state if sessao_rpa else None
-    if storage_state:
-        print("Estado de sessão encontrado (Dev Mode).")
-    else:
-        print("Nenhum estado de sessão encontrado. Será necessário um novo login (Dev Mode).")
-
 
     # --- 1. Estruturar todos os dados em um único dicionário (JSON) ---
     rpa_params = {
@@ -1103,14 +1054,12 @@ def execute_agenda_task_dev_mode(agenda_id):
             "uf2": caminhao.uf2,
             "placa_reboque3": caminhao.placa_reboque3,
             "uf3": caminhao.uf3,
-        },
-        "storage_state": storage_state # Passa o estado da sessão para o robô
+        }
     }
 
     # --- 2. Remover prints antigos e imprimir o JSON formatado ---
-    print("\n--- PARÂMETROS PARA EXECUÇÃO DO RPA (JSON) (Dev Mode) ---")
-    params_to_print = {k: v for k, v in rpa_params.items() if k != 'storage_state'}
-    print(json.dumps(params_to_print, indent=4))
+    print("\n--- PARÂMETROS PARA EXECUÇÃO DO RPA (JSON) ---")
+    print(json.dumps(rpa_params, indent=4))
     print("--------------------------------------------\n")
 
     agenda.status = 'processando (Dev)'
@@ -1120,31 +1069,18 @@ def execute_agenda_task_dev_mode(agenda_id):
         run_headless_mode = False  # Sempre visível para modo dev
         print(f"Chamando process_agendamento_main_task com run_headless={run_headless_mode} (Dev Mode)")
         
-        # --- 3. Passar o dicionário `rpa_params` que agora contém o storage_state ---
+        # --- 3. Passar apenas o dicionário `rpa_params` ---
         result = asyncio.run(process_agendamento_main_task(rpa_params, run_headless=run_headless_mode))
         
-        # --- LÓGICA DE SESSÃO: Salvar novo estado se existir (Dev Mode) ---
-        new_storage_state = result.get('new_storage_state')
-        if new_storage_state:
-            print("--- SALVANDO NOVO ESTADO DA SESSÃO NO BANCO DE DADOS (Dev Mode) ---")
-            if sessao_rpa:
-                sessao_rpa.storage_state = new_storage_state
-                sessao_rpa.last_updated = datetime.now(timezone.utc)
-            else:
-                sessao_rpa = RpaSessao(storage_state=new_storage_state)
-                db.session.add(sessao_rpa)
-            db.session.commit()
-            print("--- Novo estado da sessão salvo com sucesso (Dev Mode). ---")
-
         if result['success']:
             agenda.status = 'agendado'
-            # agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso (Dev Mode).') # log_retorno não existe
+            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso (Dev Mode).')
             db.session.commit()
             return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso (Dev Mode).')))
         else:
             agenda.status = 'erro (Dev)'
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA (Dev Mode).')
-            # agenda.log_retorno = log_content_for_db # log_retorno não existe
+            agenda.log_retorno = log_content_for_db
             
             try:
                 db.session.commit()
@@ -1152,7 +1088,7 @@ def execute_agenda_task_dev_mode(agenda_id):
                 db.session.rollback()
                 print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id} (Dev Mode): {commit_e}")
                 try:
-                    # agenda.log_retorno = f"Original commit (Dev Mode) failed: {commit_e}" # log_retorno não existe
+                    agenda.log_retorno = f"Original commit (Dev Mode) failed: {commit_e}"
                     db.session.commit()
                 except Exception as final_e:
                     db.session.rollback()
@@ -1163,7 +1099,7 @@ def execute_agenda_task_dev_mode(agenda_id):
     except Exception as e:
         db.session.rollback()
         agenda.status = 'erro (Dev)'
-        # agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}" # log_retorno não existe
+        agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}"
         db.session.commit()
         print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô (Dev Mode)."), 500

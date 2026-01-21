@@ -28,12 +28,11 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
     Processa um agendamento no site da Fertipar usando Playwright,
     recebendo todos os parâmetros em um único dicionário.
     """
-    # --- Extrair dados do dicionário rpa_params ---
+    # --- 2. Extrair dados do dicionário rpa_params ---
     config = rpa_params.get("config", {})
     agenda_item = rpa_params.get("agenda", {})
     motorista = rpa_params.get("motorista", {})
     caminhao = rpa_params.get("caminhao", {})
-    storage_state = rpa_params.get("storage_state") # Novo: extrair storage_state
 
     url_login = config.get("url_acesso")
     filial = config.get("filial")
@@ -58,70 +57,30 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
     print(f"Iniciando automação para Protocolo: {protocolo_procurado}, Pedido: {pedido_procurado}, CPF: {nro_cpf}")
 
     async with async_playwright() as playwright:
-        # Determina o modo headless com base na configuração 'head_evento' do JSON.
-        # head_evento: true (mostrar tela) -> headless=False
-        # head_evento: false (rodar em background) -> headless=True
-        mostrar_tela = config.get('head_evento', False)
-        run_headless_mode = not mostrar_tela
-        
-        print(f"Configuração 'head_evento' é {mostrar_tela}. Modo headless do navegador: {run_headless_mode}.")
-
-        browser = await playwright.chromium.launch(headless=run_headless_mode, slow_mo=50, args=["--start-fullscreen"])
-        # Novo: Inicializa o contexto com o storage_state se ele existir
-        context = await browser.new_context(storage_state=storage_state if storage_state else {})
+        browser = await playwright.chromium.launch(headless=run_headless, slow_mo=50, args=["--start-fullscreen"])
+        context = await browser.new_context()
         page = await context.new_page()
 
-        new_storage_state = None # Será preenchido se um novo login for realizado
-
         try:
-            print("--- Iniciando verificação de sessão e login condicional ---")
-            cotacoes_url = "https://sisferweb.fertipar.com.br/logistica/paginas/cotacoesTransportadora/index.xhtml"
-            
-            # Navegue para a página de cotações para verificar o estado da sessão
-            await page.goto(cotacoes_url, timeout=60000) # Increased timeout for initial navigation
-            
-            # Verifique se o elemento de login está visível. Se sim, a sessão é inválida.
-            login_needed = False
-            try:
-                # Usar um seletor que é único da página de login
-                await expect(page.locator("#filial_label")).to_be_visible(timeout=5000)
-                login_needed = True
-                print("[INFO] Elemento de login encontrado. Sessão inválida ou expirada.")
-            except (TimeoutError, AssertionError):
-                print("[INFO] Elemento de login NÃO encontrado. Sessão provavelmente ativa.")
-                # Adicionalmente, verificar se a página de destino (dashboard) está correta
-                try:
-                    await expect(page.get_by_role("grid").first).to_be_visible(timeout=5000)
-                    print("[INFO] Grid do dashboard encontrado. Sessão ativa e na página correta.")
-                except TimeoutError:
-                    print("[WARN] Grid do dashboard NÃO encontrado. A sessão pode estar ativa mas em uma página inesperada. Tentando login.")
-                    login_needed = True # Force login if dashboard not found, even if login elements weren't initially visible.
+            # --- ETAPA DE LOGIN ---
+            print("Executando a sequência de login...")
+            await page.goto(url_login, timeout=60000)
+            await page.locator("#filial_label").click()
+            await page.get_by_role("option", name=filial).click()
+            await page.get_by_role("textbox", name="Usuário").fill(usuario_site)
+            await page.get_by_role("textbox", name="Senha").fill(senha_site)
+            await page.get_by_role("button", name=" Acessar").click()
+            await page.wait_for_load_state('networkidle', timeout=30000)
+            print("Login realizado com sucesso.")
 
-            if login_needed:
-                print("[INFO] Realizando novo login...")
-                # --- ETAPA DE LOGIN COMPLETA (existente) ---
-                await page.goto(url_login, timeout=60000)
-                await page.locator("#filial_label").click()
-                await page.get_by_role("option", name=filial).click()
-                await page.get_by_role("textbox", name="Usuário").fill(usuario_site)
-                await page.get_by_role("textbox", name="Senha").fill(senha_site)
-                await page.get_by_role("button", name=" Acessar").click()
-                await page.wait_for_load_state('networkidle', timeout=30000)
-                print("Login realizado com sucesso.")
-
-                # Após login, navegue e verifique novamente a página de cotações
-                await page.goto(cotacoes_url, timeout=30000)
-                await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
-                print("[SUCESSO] Navegação para 'Minhas Cotações' após novo login.")
-
-                # Capture o novo estado da sessão
-                new_storage_state = await context.storage_state()
-            else:
-                print("[SUCESSO] Sessão ativa e na página correta. Prosseguindo sem login.")
+            # --- NAVEGAÇÃO PÓS-LOGIN ---
+            print("Navegando para 'Minhas Cotações'...")
+            await page.get_by_role("link", name=" Minhas Cotaçoes").click()
+            await page.wait_for_load_state('networkidle', timeout=30000)
             
-            # --- LÓGICA DA TABELA (a partir daqui o código original continua) ---
+            # --- LÓGICA DA TABELA ---
             print(f"Procurando pelo protocolo: {protocolo_procurado} e pedido: {pedido_procurado}...")
-            # Note: The grid expectation was already checked during session validation/login
+            await expect(page.get_by_role("grid").first).to_be_visible(timeout=30000)
             linha_do_item = page.locator(f'//tr[contains(., "{protocolo_procurado}") and contains(., "{pedido_procurado}")]')
 
             if await linha_do_item.count() > 0:
@@ -325,26 +284,22 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
                 print("Automação de agendamento concluída com sucesso.")
 
-                # --- LÓGICA CONDICIONAL PARA SALVAR O AGENDAMENTO ---
-                modo_execucao = config.get("modo_execucao", "producao") # Default para 'producao' se não for especificado
-
+                # Identifica o botão Salvar, mas não clica nele
                 salvar_button = page.get_by_role("button", name=" Salvar")
-                await expect(salvar_button).to_be_visible(timeout=5000)
-                
-                if modo_execucao == "teste":
-                    print("\n[MODO TESTE] EVENTO EM TESTE - NAO ESTA AGENDANDO!")
-                    print("[MODO TESTE] O botão 'Salvar' foi identificado, mas não será clicado.")
-                else:
-                    print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
-                    await salvar_button.click()
-                    print("[MODO PRODUCAO] O botão 'Salvar' foi clicado com sucesso.")
+                print("Elemento 'Salvar' identificado, MAS NÃO SERÁ CLICADO NESSE MOMENTO.")
 
-                # O navegador será fechado automaticamente ao finalizar a automação.
-                return {"success": True, "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
+                # Se não estiver em modo headless, pausar para inspeção
+                if not run_headless:
+                    print("\n--- SUCESSO ---")
+                    print("Automação concluída. O navegador está em modo de pausa.")
+                    print("Clique no botão 'Resume' no inspetor do Playwright para fechar ou inspecione a página.")
+                    await page.pause()
+
+                return {"success": True, "message": "Agendamento processado com sucesso."}
             else:
                 message = f"Não há dados para pesquisar - motivo: sem agenda no site fertipar para Protocolo {protocolo_procurado} e Pedido {pedido_procurado}."
                 print(message)
-                return {"success": False, "message": message, "new_storage_state": new_storage_state}
+                return {"success": False, "message": message}
 
         except Exception as e:
             tb_str = traceback.format_exc()
@@ -361,12 +316,21 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             elif isinstance(e, TimeoutError):
                  user_facing_message = "A automação excedeu o tempo de espera por um elemento na página."
 
-            # Em caso de erro, o navegador será fechado automaticamente.
+            # Se não estiver em modo headless, pausar para inspeção no ponto do erro
+            if not run_headless:
+                print("\n--- ERRO ---")
+                print("A automação encontrou um erro. O navegador está em modo de pausa para inspeção.")
+                print("Clique no botão 'Resume' no inspetor do Playwright para finalizar ou inspecione a página.")
+                try:
+                    await page.pause()
+                except Exception as pause_error:
+                    print(f"Não foi possível pausar a página (pode já ter sido fechada): {pause_error}")
 
-            return {"success": False, "message": tb_str, "user_facing_message": user_facing_message, "new_storage_state": new_storage_state}
+            return {"success": False, "message": tb_str, "user_facing_message": user_facing_message}
 
         finally:
-            # O navegador será fechado automaticamente ao finalizar a automação.
+            # A lógica de fechar o navegador agora é controlada pelo usuário ao resumir o page.pause()
+            # ou se a automação for executada em modo headless.
             if browser.is_connected():
                 print("Finalizando automação e fechando o navegador.")
                 await browser.close()
