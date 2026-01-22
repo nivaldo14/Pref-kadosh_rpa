@@ -1,18 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
 
-    // --- Seletores de Elementos ---
-    const motoristaSelect = document.getElementById('agenda-motorista-select');
-    const motoristaInfoDiv = document.getElementById('agenda-motorista-info');
-    const caminhaoSelect = document.getElementById('agenda-caminhao-select');
-    const caminhaoInfoDiv = document.getElementById('agenda-caminhao-info');
-    const formGerarAgenda = document.getElementById('form-gerar-agenda');
-
-    // Campos ocultos
-    const hiddenMotoristaId = document.getElementById('hidden-motorista-id');
-    const hiddenCaminhaoId = document.getElementById('hidden-caminhao-id');
-    const hiddenFertiparItemJson = document.getElementById('hidden-fertipar-item-json');
-
     // Elementos do Modal Fertipar
     const fertiparModal = document.getElementById('fertiparModal');
     const btnLerDadosFertipar = document.getElementById('btnLerDadosFertipar');
@@ -21,12 +9,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedFertiparItemsDiv = document.getElementById('selected-fertipar-items');
     const btnSaveFertipar = fertiparModal ? fertiparModal.querySelector('.modal-footer .btn-primary') : null;
 
-    // Tabela de Agendas em Espera
-    const agendasEmEsperaBody = document.getElementById('agendas-em-espera-body');
+    // Tabela de Agendas Executadas
+    const agendasExecutadasBody = document.getElementById('agendas-executadas-body');
+
+    // Filtros de Ano e Mês
+    const selectAnoFiltro = document.getElementById('select-ano-filtro');
+    const selectMesFiltro = document.getElementById('select-mes-filtro');
 
     // --- Constantes ---
     const LAST_READ_KEY = 'lastFertiparRead';
     const FIVE_MINUTES_MS = 5 * 60 * 1000;
+    const POLLING_INTERVAL_MS = 5000; // 5 segundos para o auto-refresh
 
     // --- Funções Auxiliares ---
     function getAuthHeaders() {
@@ -148,8 +141,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function fetchAgendasProcessarData() { // Renamed
-        return fetch('/api/agendas_processar', { headers: getAuthHeaders() }) // Changed endpoint
+    // fetchAgendasProcessarData não é mais usado da mesma forma, mas mantido por enquanto
+    function fetchAgendasProcessarData() { 
+        return fetch('/api/agendas_processar', { headers: getAuthHeaders() })
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`Erro HTTP: ${response.status}`);
@@ -157,37 +151,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .catch(error => {
-                console.error('Erro ao buscar agendas pendentes:', error); // Updated message
-                showAlert('Falha ao carregar agendas pendentes. Verifique sua conexão ou autenticação.', 'danger'); // Updated message
-                return []; // Retorna um array vazio em caso de erro
+                console.error('Erro ao buscar agendas para processar:', error); 
+                showAlert('Falha ao carregar agendas para processar. Verifique sua conexão ou autenticação.', 'danger'); 
+                return []; 
             });
     }
 
-    function fetchAgendasAgendadasData() {
-        return fetch('/api/agendas_agendadas', { headers: getAuthHeaders() })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-                return response.json();
-            })
-            .catch(error => {
-                console.error('Erro ao buscar agendas agendadas:', error);
-                showAlert('Falha ao carregar agendas agendadas. Verifique sua conexão ou autenticação.', 'danger');
-                return []; // Retorna um array vazio em caso de erro
-            });
+    // Nova função para buscar agendas, agora com filtros de ano e mês
+    async function fetchAgendasData(year, month) {
+        let url = `/api/agendas_agendadas?year=${year}&month=${month}`;
+        try {
+            const response = await fetch(url, { headers: getAuthHeaders() });
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar agendas:', error);
+            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+            return [];
+        }
     }
 
     // Nova função para renderizar as agendas no DOM
-    async function renderAgendasAgendadas(agendas) { // Renamed, now async
+    async function renderAgendas(agendas) { 
         agendasEmEsperaBody.innerHTML = ''; // Limpa o conteúdo atual da tabela
 
         if (agendas.length === 0) {
-            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda agendada.</td></tr>'; // Updated message
+            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o período selecionado.</td></tr>';
             return;
         }
 
-        for (const agenda of agendas) { // Use for...of for async operations if needed, or just forEach
+        for (const agenda of agendas) { 
             const row = agendasEmEsperaBody.insertRow();
             
             // Determine badge class based on status
@@ -196,13 +191,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (agenda.status === 'agendado') {
                 statusBadgeClass = 'badge-success';
-            } else if (agenda.status === 'erro' || agenda.status === 'erro (Dev)') { // Handle error status
+            } else if (agenda.status === 'erro' || agenda.status === 'erro (Dev)') { 
                 statusBadgeClass = 'badge-danger';
-                rowClass = 'erro-row'; // Apply error row class
-            } else if (agenda.status === 'processando' || agenda.status === 'processando (Dev)') {
+                rowClass = 'erro-row'; 
+            } else if (agenda.status === 'processando' || agenda.status === 'processando (Dev)' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando') { // Added new statuses
                 statusBadgeClass = 'badge-info';
-            } else if (agenda.status === 'cancelado') { // If status can be 'cancelado'
+            } else if (agenda.status === 'cancelado' || agenda.status === 'recusado') { // Added 'recusado'
                 statusBadgeClass = 'badge-warning';
+            } else if (agenda.status === 'espera') {
+                statusBadgeClass = 'badge-primary'; // A new color for 'espera' to differentiate
             }
 
             // Formata as informações do caminhão a partir do objeto
@@ -225,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td>
                 <td><span class="badge ${statusBadgeClass}">${agenda.status.toUpperCase()}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${agenda.status === 'agendado' || agenda.status === 'processando' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
+                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${agenda.status === 'agendado' || agenda.status === 'processando' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
                     <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}"><i class="fas fa-times"></i></button>
                 </td>
             `;
@@ -725,6 +722,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Lógica de Agendamento (Subgrid) ---
+    async function startStatusMonitoring(protocolo, pedido) {
+        showAlert(`Iniciando monitoramento de status para Protocolo ${protocolo}...`, 'info', true);
+    
+        try {
+            const response = await fetch('/api/agendas/monitor_status', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ protocolo: protocolo, pedido: pedido }),
+            });
+    
+            const result = await response.json();
+    
+            if (result.success) {
+                showAlert(`Protocolo ${protocolo}: APROVADO! Iniciando agendamento...`, 'success', true);
+                updateTableRowStatus(protocolo, pedido, 'aprovado_e_agendando'); // A new temporary status
+                return true; // Indicate success to proceed with scheduling
+            } else {
+                const finalStatus = result.status || 'erro'; // 'RECUSADO' or 'ERRO'
+                const message = result.message || `O monitoramento falhou ou o item foi recusado.`;
+                showAlert(`Protocolo ${protocolo}: ${finalStatus}. ${message}`, 'danger', true);
+                updateTableRowStatus(protocolo, pedido, finalStatus.toLowerCase());
+                return false; // Indicate failure
+            }
+        } catch (error) {
+            console.error('Erro de conexão durante o monitoramento de status:', error);
+            showAlert('Erro de conexão com o servidor durante o monitoramento. Verifique o console.', 'danger', true);
+            updateTableRowStatus(protocolo, pedido, 'erro');
+            return false; // Indicate failure
+        }
+    }
+
     async function agendarViaSubgrid(button) {
         const subgridContent = $(button).closest('.subgrid-content');
         const mainRow = subgridContent.closest('.fertipar-subgrid-row').prev('.fertipar-main-row');
@@ -734,6 +762,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const caminhaoId = subgridContent.find('.caminhao-subgrid-input').attr('data-id');
         const cargaSolicitada = subgridContent.find('.carga-solicitada-input').val();
         const fertiparItem = JSON.parse(mainRow.attr('data-item'));
+        const protocolo = fertiparItem.Protocolo;
+        const pedido = fertiparItem.Pedido;
 
         if (!motoristaId || !caminhaoId || !fertiparItem) {
             // showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning'); // Removido toast
@@ -758,50 +788,1062 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         try {
-            const response = await fetch('/agendar', {
+            const createAgendaResponse = await fetch('/agendar', {
                 method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData)
             });
-            const result = await response.json();
-            if (result.success) {
-                showAlert('Agenda criada com sucesso!', 'success', true);
-                
-                // --- Parte 1: Atualizar UI da sub-tabela para "espera" ---
-                // O statusInput já está 'Agendando...', agora mudamos para 'espera' e aplicamos o estilo
-                statusInput.val('espera');
-                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'espera');
-                
-                // --- Parte 2: Chamar o RPA e atualizar UI com o resultado final ---
-                showAlert(`Executando RPA para Protocolo ${fertiparItem.Protocolo}...`, 'info', true);
-                const rpaResult = await executeRpaTask(result.agenda); // Chama a função refatorada
+            const createResult = await createAgendaResponse.json();
 
-                if (rpaResult.success) {
-                    showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+            if (createResult.success) {
+                showAlert('Agenda criada no sistema, iniciando monitoramento no site externo...', 'info', true);
+                updateTableRowStatus(protocolo, pedido, 'monitorando'); // New visual status
+    
+                // **NEW LOGIC: Start the monitoring process**
+                const isApproved = await startStatusMonitoring(protocolo, pedido);
+    
+                if (isApproved) {
+                    // If approved, THEN execute the original RPA to schedule
+                    showAlert(`Status APROVADO. Executando agendamento final para Protocolo ${protocolo}...`, 'info', true);
+                    const rpaResult = await executeRpaTask(createResult.agenda); // executeRpaTask already exists
+    
+                    if (rpaResult.success) {
+                        showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+                        updateTableRowStatus(protocolo, pedido, 'agendado');
+                    } else {
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        showAlert(displayMessage, 'danger', true);
+                        updateTableRowStatus(protocolo, pedido, 'erro');
+                    }
+                    loadAndRenderAgendas();
+                    subgridContent.find('input, button').prop('disabled', true);
+    
                 } else {
-                    // Usa user_facing_message se disponível, senão a message padrão
-                    const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
-                    showAlert(displayMessage, 'danger', true);
+                    // If not approved (rejected or error during monitoring), stop here.
+                    // The status has already been updated by startStatusMonitoring.
+                    button.disabled = false; // Maybe re-enable the button? Or keep it disabled.
                 }
-
-                // Atualizar o status final na sub-tabela e na tabela principal
-                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, rpaResult.success ? 'agendado' : 'erro');
-                loadAndRenderAgendas(); // Recarrega a lista principal para refletir o status final
-
-                subgridContent.find('input, button').prop('disabled', true); // Desabilita todos os inputs e botões
-                
+    
             } else {
-                showAlert(result.message || 'Erro ao criar agenda: Erro desconhecido', 'danger');
-                statusInput.val('Erro!');
-                updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'erro'); // Atualiza visualmente para erro
+                showAlert(createResult.message || 'Erro ao criar agenda no sistema.', 'danger');
+                statusInput.val('Erro local!');
+                updateTableRowStatus(protocolo, pedido, 'erro');
                 button.disabled = false;
             }
         } catch (error) {
             console.error('Erro ao agendar via subgrid:', error);
             showAlert('Erro de conexão ao agendar. Verifique sua rede e o status do servidor.', 'danger');
             statusInput.val('Falha na conexão');
-            updateTableRowStatus(fertiparItem.Protocolo, fertiparItem.Pedido, 'erro'); // Atualiza visualmente para erro
+            updateTableRowStatus(protocolo, pedido, 'erro'); // Atualiza visualmente para erro
             button.disabled = false;
         }
     }
+
+
+    if (fertiparDataTableBody) {
+        // Listener para o botão de agendamento do subgrid
+        fertiparDataTableBody.addEventListener('click', function(event) {
+            const agendarButton = event.target.closest('.btn-agendar-subgrid');
+            if (agendarButton) {
+                agendarViaSubgrid(agendarButton);
+            }
+        });
+
+        // Listener para validação do campo de carga solicitada
+        fertiparDataTableBody.addEventListener('input', function(event) {
+            const cargaInput = event.target.closest('.carga-solicitada-input');
+            if (cargaInput) {
+                const mainRow = $(cargaInput).closest('.fertipar-subgrid-row').prev('.fertipar-main-row');
+                const itemData = JSON.parse(mainRow.attr('data-item'));
+                const qtdeDisponivel = parseFloat(itemData['Qtde.']);
+                const cargaDigitada = parseFloat(cargaInput.value);
+
+                if (!isNaN(cargaDigitada) && !isNaN(qtdeDisponivel) && cargaDigitada > qtdeDisponivel) {
+                    toastr.warning(`A carga solicitada (${cargaDigitada} ton) não pode ser maior que a quantidade disponível (${qtdeDisponivel} ton).`, 'Valor Inválido');
+                    cargaInput.value = qtdeDisponivel;
+                }
+            }
+        });
+    }
+
+    const btnAgendarTodos = document.getElementById('btnAgendarTodos');
+    if (btnAgendarTodos) {
+        btnAgendarTodos.addEventListener('click', async function() {
+            try {
+                showAlert('Iniciando o processamento de "Agendar Todos". Verifique o console do navegador para os detalhes.', 'info'); // Alerta moderno
+                
+                const agendas = await fetchAgendasProcessarData();
+                if (agendas.length === 0) {
+                    showAlert('Nenhuma agenda em espera para agendar.', 'info');
+                    return;
+                }
+
+                // Imprime os dados formatados em JSON no console do navegador
+                console.log('Dados das Agendas em Espera (JSON):');
+                console.log(JSON.stringify(agendas, null, 2));
+                
+                showAlert(`Foram encontrados ${agendas.length} agendas em espera. Dados impressos no console.`, 'success');
+
+            } catch (error) {
+                console.error('Erro ao agendar todos:', error);
+                showAlert('Erro ao processar as agendas em espera. Verifique o console para mais detalhes.', 'danger');
+            }
+        });
+    }
+
+    // --- Nova função para exclusão de agenda ---
+    async function deleteAgenda(agendaId) {
+        if (!confirm('Tem certeza que deseja cancelar esta agenda?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/agenda/${agendaId}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('Agenda cancelada com sucesso!', 'success');
+                loadAndRenderAgendas(); // Recarregar a lista
+            } else {
+                showAlert('Erro ao cancelar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
+            }
+        } catch (error) {
+            console.error('Erro de conexão ao cancelar agenda:', error);
+            showAlert('Erro de conexão ao cancelar agenda.', 'danger');
+        }
+    }
+
+    // --- Event listener para os botões de cancelar ---
+    if (agendasEmEsperaBody) {
+        agendasEmEsperaBody.addEventListener('click', function(event) {
+            const target = event.target.closest('.btn-cancelar-agenda');
+            if (target) {
+                const agendaId = target.getAttribute('data-id');
+                if (agendaId) {
+                    deleteAgenda(agendaId);
+                }
+            }
+        });
+    }
+
+    // --- Lógica para expandir/recolher subgrid no Modal Fertipar ---
+    if (fertiparDataTableBody) {
+        fertiparDataTableBody.addEventListener('click', function(event) {
+            const toggleButton = event.target.closest('.btn-toggle-subgrid');
+            if (toggleButton) {
+                const mainRow = toggleButton.closest('.fertipar-main-row');
+                const subgridRow = mainRow.nextElementSibling; // A linha do subgrid é a próxima irmã da linha principal
+
+                if (subgridRow && subgridRow.classList.contains('fertipar-subgrid-row')) {
+                    if (subgridRow.style.display === 'none') {
+                        subgridRow.style.display = ''; // Mostrar
+                        toggleButton.querySelector('i').classList.remove('fa-plus');
+                        toggleButton.querySelector('i').classList.add('fa-minus');
+                    } else {
+                        subgridRow.style.display = 'none'; // Esconder
+                        toggleButton.querySelector('i').classList.remove('fa-minus');
+                        toggleButton.querySelector('i').classList.add('fa-plus');
+                    }
+                }
+            }
+        });
+    }
+    
+    // --- Lógica de busca e renderização dos selects customizados ---
+    let cachedMotoristas = [];
+    let cachedCaminhoes = [];
+
+    async function fetchMotoristas() {
+        if (cachedMotoristas.length > 0) {
+            return cachedMotoristas;
+        }
+        try {
+            const response = await fetch('/api/motoristas'); // Não requer autenticação
+            const data = await response.json();
+            cachedMotoristas = data;
+            return data;
+        } catch (error) {
+            console.error('Erro ao buscar motoristas:', error);
+            return [];
+        }
+    }
+
+    async function fetchCaminhoes() {
+        if (cachedCaminhoes.length > 0) {
+            return cachedCaminhoes;
+        }
+        try {
+            const response = await fetch('/api/caminhoes'); // Não requer autenticação
+            const data = await response.json();
+            cachedCaminhoes = data;
+            return data;
+        } catch (error) {
+            console.error('Erro ao buscar caminhões:', error);
+            return [];
+        }
+    }
+
+    function renderSelectOptions(inputElement, dropdownElement, items, displayKey, idKey) {
+        const ul = dropdownElement.querySelector('.custom-select-list');
+        ul.innerHTML = '';
+        const filterValue = inputElement.value.toLowerCase();
+        const filteredItems = items.filter(item => 
+            item[displayKey].toLowerCase().includes(filterValue)
+        );
+
+        if (filteredItems.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item disabled';
+            li.textContent = 'Nenhum resultado';
+            ul.appendChild(li);
+        } else {
+            filteredItems.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-action';
+                li.setAttribute('data-id', item[idKey]);
+                li.setAttribute('data-value', item[displayKey]);
+                li.textContent = item[displayKey];
+                ul.appendChild(li);
+            });
+        }
+        dropdownElement.style.display = 'block';
+    }
+
+    function hideSelectDropdown(dropdownElement) {
+        if (dropdownElement) dropdownElement.style.display = 'none';
+    }
+
+    $(fertiparDataTableBody).on('focus', '.motorista-subgrid-input', async function() {
+        const dropdown = $(this).closest('.custom-select-container').find('.custom-select-dropdown')[0];
+        const motoristas = await fetchMotoristas();
+        renderSelectOptions(this, dropdown, motoristas, 'nome', 'id');
+    });
+
+    $(fertiparDataTableBody).on('keyup', '.motorista-subgrid-input', async function() {
+        const dropdown = $(this).closest('.custom-select-container').find('.custom-select-dropdown')[0];
+        const motoristas = await fetchMotoristas();
+        renderSelectOptions(this, dropdown, motoristas, 'nome', 'id');
+    });
+    
+    $(fertiparDataTableBody).on('focus', '.caminhao-subgrid-input', async function() {
+        const dropdown = $(this).closest('.custom-select-container').find('.custom-select-dropdown')[0];
+        const caminhoes = await fetchCaminhoes();
+        renderSelectOptions(this, dropdown, caminhoes, 'placa', 'id');
+    });
+
+    $(fertiparDataTableBody).on('keyup', '.caminhao-subgrid-input', async function() {
+        const dropdown = $(this).closest('.custom-select-container').find('.custom-select-dropdown')[0];
+        const caminhoes = await fetchCaminhoes();
+        renderSelectOptions(this, dropdown, caminhoes, 'placa', 'id');
+    });
+
+    $(fertiparDataTableBody).on('click', '.custom-select-list li', function() {
+        const selectedId = this.getAttribute('data-id');
+        const selectedValue = this.getAttribute('data-value');
+        const customSelectContainer = $(this).closest('.custom-select-container');
+        const input = customSelectContainer.find('.custom-select-input');
+        const detailsDiv = customSelectContainer.find('.selected-item-details');
+
+        input.val(selectedValue);
+        input.attr('data-id', selectedId);
+        hideSelectDropdown(customSelectContainer.find('.custom-select-dropdown')[0]);
+        
+        if (input.hasClass('motorista-subgrid-input')) {
+            const selectedMotorista = cachedMotoristas.find(m => m.id == selectedId);
+            if (selectedMotorista) {
+                detailsDiv.html(`
+                    <div class="subgrid-details-card">
+                        <div><strong>CPF:</strong>${selectedMotorista.cpf || 'N/A'}</div>
+                        <div><strong>Telefone:</strong>${selectedMotorista.telefone || 'N/A'}</div>
+                    </div>
+                `);
+            }
+        } else if (input.hasClass('caminhao-subgrid-input')) {
+            const selectedCaminhao = cachedCaminhoes.find(c => c.id == selectedId);
+            if (selectedCaminhao) {
+                const reboques = ['1', '2', '3'].map(i => {
+                    const placa = selectedCaminhao[`placa_reboque${i}`];
+                    const uf = selectedCaminhao[`uf${i}`];
+                    return placa ? `<div><strong>Reb${i}:</strong> ${placa} (${uf || ''})</div>` : null;
+                }).filter(Boolean).join('');
+                detailsDiv.html(`
+                    <div class="subgrid-details-card">
+                        <div><strong>Carroceria:</strong> ${selectedCaminhao.tipo_carroceria || 'N/A'}</div>
+                        ${reboques}
+                    </div>
+                `);
+            }
+        }
+    });
+
+    $(document).on('click', function(event) {
+        $('.custom-select-container').each(function() {
+            if (!this.contains(event.target)) {
+                hideSelectDropdown($(this).find('.custom-select-dropdown')[0]);
+            }
+        });
+    });
+    
+    async function executeAgenda(agendaId) {
+        if (!confirm('Tem certeza que deseja executar esta agenda?')) {
+            return;
+        }
+        showAlert(`Executando agenda ID ${agendaId}...`, 'info', true);
+        try {
+            const response = await fetch(`/api/agendas/execute/${agendaId}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message || 'Agenda executada com sucesso!', 'success');
+                // Re-render the table to reflect status change (e.g., from 'espera'/'erro' to 'processando' then 'agendado')
+                await loadAndRenderAgendas(); 
+            } else {
+                showAlert(result.message || 'Ocorreu um erro ao executar a agenda.', 'danger');
+                await loadAndRenderAgendas(); // Re-render to show error status
+            }
+        } catch (error) {
+            console.error('Erro de conexão ao executar agenda:', error);
+            showAlert('Erro de conexão ao executar agenda.', 'danger');
+        }
+    }
+
+    // --- Lógica de Polling para Atualização de Status ---
+    // A função 'pollForAgendaUpdates' será integrada diretamente na 'loadAndRenderAgendas'
+    // A função 'loadAndRenderAgendas' agora carrega as agendas com base nos filtros
+    async function loadAndRenderAgendas() {
+        const selectedYear = selectAnoFiltro.value;
+        const selectedMonth = selectMesFiltro.value;
+        const agendas = await fetchAgendasData(selectedYear, selectedMonth); 
+        await renderAgendas(agendas);
+        // lastKnownStatuses não é mais necessário com o refresh completo a cada poll.
+    }
+
+    // 1. Configurar valores padrão para ano e mês
+    const today = new Date();
+    selectAnoFiltro.value = today.getFullYear();
+    selectMesFiltro.value = today.getMonth() + 1; // getMonth() é 0-indexado
+
+    // 2. Adicionar event listeners para os filtros
+    selectAnoFiltro.addEventListener('change', loadAndRenderAgendas);
+    selectMesFiltro.addEventListener('change', loadAndRenderAgendas);
+
+    // 3. Inicializar a carga e configurar o polling de 5 segundos
+    loadAndRenderAgendas(); // Executa uma vez imediatamente na carga da página
+    setInterval(loadAndRenderAgendas, POLLING_INTERVAL_MS); // Executa a cada 5 segundos
+});
+
+    // fetchAgendasProcessarData não é mais usado da mesma forma, mas mantido por enquanto
+    function fetchAgendasProcessarData() { 
+        return fetch('/api/agendas_processar', { headers: getAuthHeaders() })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Erro ao buscar agendas para processar:', error); 
+                showAlert('Falha ao carregar agendas para processar. Verifique sua conexão ou autenticação.', 'danger'); 
+                return []; 
+            });
+    }
+
+    // Nova função para buscar agendas, agora com filtros de ano e mês
+    async function fetchAgendasData(year, month) {
+        let url = `/api/agendas_agendadas?year=${year}&month=${month}`;
+        try {
+            const response = await fetch(url, { headers: getAuthHeaders() });
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar agendas:', error);
+            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+            return [];
+        }
+    }
+
+    // Nova função para renderizar as agendas no DOM
+    async function renderAgendas(agendas) { 
+        agendasEmEsperaBody.innerHTML = ''; // Limpa o conteúdo atual da tabela
+
+        if (agendas.length === 0) {
+            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o período selecionado.</td></tr>';
+            return;
+        }
+
+        for (const agenda of agendas) { 
+            const row = agendasEmEsperaBody.insertRow();
+            
+            // Determine badge class based on status
+            let statusBadgeClass = 'badge-secondary'; // Default
+            let rowClass = ''; // New variable for row class
+
+            if (agenda.status === 'agendado') {
+                statusBadgeClass = 'badge-success';
+            } else if (agenda.status === 'erro' || agenda.status === 'erro (Dev)') { 
+                statusBadgeClass = 'badge-danger';
+                rowClass = 'erro-row'; 
+            } else if (agenda.status === 'processando' || agenda.status === 'processando (Dev)' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando') { // Added new statuses
+                statusBadgeClass = 'badge-info';
+            } else if (agenda.status === 'cancelado' || agenda.status === 'recusado') { // Added 'recusado'
+                statusBadgeClass = 'badge-warning';
+            } else if (agenda.status === 'espera') {
+                statusBadgeClass = 'badge-primary'; // A new color for 'espera' to differentiate
+            }
+
+            // Formata as informações do caminhão a partir do objeto
+            let caminhaoDisplay = agenda.caminhao.placa;
+            if (agenda.caminhao.tipo_carroceria) {
+                caminhaoDisplay += ` - ${agenda.caminhao.tipo_carroceria}`;
+            }
+            if (agenda.caminhao.reboques && agenda.caminhao.reboques.length > 0) {
+                caminhaoDisplay += ` | ${agenda.caminhao.reboques.join(', ')}`;
+            }
+
+            row.className = rowClass; // Apply the row class
+            row.innerHTML = `
+                <td>${agenda.data_agendamento}</td>
+                <td>${agenda.motorista}</td>
+                <td>${caminhaoDisplay}</td>
+                <td>${agenda.protocolo}</td>
+                <td>${agenda.pedido}</td>
+                <td>${agenda.destino}</td>
+                <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td>
+                <td><span class="badge ${statusBadgeClass}">${agenda.status.toUpperCase()}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${agenda.status === 'agendado' || agenda.status === 'processando' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
+                    <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}"><i class="fas fa-times"></i></button>
+                </td>
+            `;
+            // Add event listener for the new execute button
+            const executeButton = row.querySelector('.btn-executar-agenda');
+            if (executeButton) {
+                executeButton.addEventListener('click', async () => {
+                    await executeAgenda(agenda.id);
+                });
+            }
+        }
+    }
+
+    async function executeAgendaDevMode(agendaId) {
+        console.log(`[Dev Mode] Tentando executar agenda ID: ${agendaId}`);
+        showAlert(`Enviando agenda ID ${agendaId} para processamento em modo DEV (apenas log no console do Flask)...`, 'info', true);
+        try {
+            const response = await fetch(`/api/agendas/execute_dev_mode/${agendaId}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            if (response.status === 401) {
+                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                return;
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(result.message || 'Comando RPA (DEV) executado com sucesso!', 'success');
+                console.log(`[Dev Mode] Resposta do Flask: ${result.message}`);
+            } else {
+                showAlert(result.message || 'Ocorreu um erro durante a execução do RPA (DEV).', 'danger', true);
+                console.error(`[Dev Mode] Erro do Flask: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('[Dev Mode] Erro ao chamar executeAgendaDevMode:', error);
+            showAlert('Erro de conexão com o servidor ao tentar executar o RPA (DEV). Verifique sua rede e o status do servidor.', 'danger', true);
+        }
+        // Não é necessário loadAndRenderAgendas aqui, pois é apenas um log no modo dev
+    }
+
+
+    // --- Lógica Principal ---
+
+    function showInfoToast(title, data) {
+        let content = '';
+        for (const [key, value] of Object.entries(data)) {
+            if (value) {
+                content += `<strong>${key}:</strong> ${value}<br>`;
+            }
+        }
+        if (content) {
+            toastr.success(content, title);
+        }
+    }
+
+    async function executeRpaTask(agenda) {
+        try {
+            const response = await fetch(`/api/agendas/execute/${agenda.id}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+            });
+
+            const result = await response.json();
+            return result; // Retorna o resultado JSON bruto do backend
+        } catch (error) {
+            console.error('Erro de conexão ao chamar executeRpaTask:', error);
+            // Retorna um objeto de erro para que o chamador possa lidar com ele
+            return { success: false, message: 'Erro de conexão com o servidor ao tentar executar o RPA. Verifique sua rede e o status do servidor.', user_facing_message: 'Erro de conexão com o servidor.' };
+        }
+    }
+
+    const btnLigarRoboDev = document.getElementById('btnLigarRoboDev');
+    if (btnLigarRoboDev) {
+        btnLigarRoboDev.addEventListener('click', async function() {
+            const agendaId = prompt("Por favor, insira o ID da agenda para executar em modo DEV:");
+            if (agendaId) {
+                await executeAgendaDevMode(parseInt(agendaId));
+            } else {
+                showAlert("ID da agenda não fornecido. Operação cancelada.", 'warning');
+            }
+        });
+    }
+
+
+    // 1. Atualizar informações e campos ocultos na seleção
+    if (motoristaSelect) {
+        motoristaSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const motoristaId = selectedOption.value;
+            hiddenMotoristaId.value = motoristaId;
+            
+            if (motoristaId) {
+                const nome = selectedOption.text;
+                const cpf = selectedOption.getAttribute('data-cpf');
+                const telefone = selectedOption.getAttribute('data-telefone');
+                
+                motoristaInfoDiv.innerHTML = `
+                    <div class="toast-like-info">
+                        <strong>Motorista:</strong> ${nome}<br>
+                        <strong>CPF:</strong> ${cpf || 'N/A'}<br>
+                        <strong>Telefone:</strong> ${telefone || 'N/A'}
+                    </div>
+                `;
+            } else {
+                motoristaInfoDiv.innerHTML = '';
+            }
+        });
+    }
+
+    if (caminhaoSelect) {
+        caminhaoSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const caminhaoId = selectedOption.value;
+            hiddenCaminhaoId.value = caminhaoId;
+
+            if (caminhaoId) {
+                const placa = selectedOption.getAttribute('data-placa');
+                const uf = selectedOption.getAttribute('data-uf');
+                const tipoCarroceria = selectedOption.getAttribute('data-tipo-carroceria');
+                const reboque1 = selectedOption.getAttribute('data-reboque1');
+                const uf1 = selectedOption.getAttribute('data-uf1');
+                const reboque2 = selectedOption.getAttribute('data-reboque2');
+                const uf2 = selectedOption.getAttribute('data-uf2');
+                const reboque3 = selectedOption.getAttribute('data-reboque3');
+                const uf3 = selectedOption.getAttribute('data-uf3');
+
+                let reboquesInfo = [];
+                if (reboque1) reboquesInfo.push(`${reboque1} (${uf1 || ''})`);
+                if (reboque2) reboquesInfo.push(`${reboque2} (${uf2 || ''})`);
+                if (reboque3) reboquesInfo.push(`${reboque3} (${uf3 || ''})`);
+
+                caminhaoInfoDiv.innerHTML = `
+                    <div class="toast-like-info">
+                        <strong>Placa:</strong> ${placa} (${uf || 'N/A'})<br>
+                        <strong>Carroceria:</strong> ${tipoCarroceria || 'N/A'}<br>
+                        ${reboquesInfo.length > 0 ? `<strong>Reboques:</strong> ${reboquesInfo.join(', ')}` : ''}
+                    </div>
+                `;
+            } else {
+                caminhaoInfoDiv.innerHTML = '';
+            }
+        });
+    }
+
+    $(selectedFertiparItemsDiv).on('change', '.fertipar-radio', function() {
+        if (this.checked) {
+            hiddenFertiparItemJson.value = this.getAttribute('data-item');
+            $('.fertipar-item-card').removeClass('selected');
+            $(this).closest('.fertipar-item-card').addClass('selected');
+        }
+    });
+
+    // 2. Lógica do Modal Fertipar
+    function updateLastReadStatus() {
+        const lastRead = localStorage.getItem(LAST_READ_KEY);
+        let needsUpdate = false;
+
+        if (lastRead) {
+            const lastReadDate = new Date(lastRead);
+            const now = new Date();
+            const diff = now.getTime() - lastReadDate.getTime();
+            let statusText = `Última leitura: ${formatDateTime(lastReadDate)}`;
+            if (diff > FIVE_MINUTES_MS) {
+                statusText += ' <span class="text-danger font-weight-bold">(Precisa atualizar!)</span>';
+                needsUpdate = true;
+            }
+            lastReadStatus.innerHTML = statusText;
+        } else {
+            lastReadStatus.textContent = 'Nenhuma leitura anterior.';
+            needsUpdate = true;
+        }
+
+        $('#fertiparDataTableBody input[type="checkbox"]').prop('disabled', needsUpdate);
+        $('#fertiparModal .filter-input').prop('disabled', needsUpdate);
+        if (btnSaveFertipar) $(btnSaveFertipar).prop('disabled', needsUpdate);
+    }
+
+    function populateFertiparTable(data, agendasEmEspera = []) {
+        fertiparDataTableBody.innerHTML = '';
+        // existingAgendas deve armazenar a combinação protocolo-pedido
+        const existingAgendas = new Set(agendasEmEspera.map(a => `${a.protocolo}-${a.pedido}`));
+
+        if (data && data.length > 0) {
+            data.forEach((item, index) => {
+                // Verificar se o item já está agendado usando protocolo-pedido
+                const isItemAgendado = existingAgendas.has(`${item.Protocolo}-${item.Pedido}`);
+                const row = fertiparDataTableBody.insertRow();
+                row.setAttribute('data-item', JSON.stringify(item));
+                row.classList.add('fertipar-main-row');
+                if (isItemAgendado) {
+                    row.classList.add('agendado-row'); // Nova classe para linha principal agendada
+                }
+                row.setAttribute('data-protocolo', item.Protocolo);
+                row.setAttribute('data-pedido', item.Pedido); // Adicionado para identificar unicamente
+                row.innerHTML = `
+                    <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid" ${isItemAgendado ? 'disabled' : ''}><i class="fas fa-plus"></i></button></td>
+                    <td><input type="checkbox" name="selecionar_item_modal" value="${index}" ${isItemAgendado ? 'disabled' : ''}></td>
+                    <td><strong>${item.Protocolo || ''}</strong></td>
+                    <td><strong>${item.Pedido || ''}</strong></td>
+                    <td>${item.Data || ''}</td>
+                    <td>${item['Situação'] || ''}</td>
+                    <td>${item.Destino || ''}</td>
+                    <td><strong>${item['Qtde.'] || ''}</strong></td>
+                    <td>${item.Embalagem || ''}</td>
+                    <td>${item['Cotação'] || ''}</td>
+                    <td>${item['Observação Cotação'] || ''}</td>
+                `;
+
+                const subgridRow = fertiparDataTableBody.insertRow();
+                subgridRow.classList.add('fertipar-subgrid-row');
+                if (isItemAgendado) {
+                    subgridRow.classList.add('agendado-row'); // Nova classe para subgrid agendado
+                }
+                subgridRow.style.display = 'none';
+                subgridRow.innerHTML = `
+                    <td colspan="11">
+                        <div class="subgrid-content p-2 shadow-sm" style="width: 100%; display: flex; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                            <div class="form-group col-md-3 custom-select-container">
+                                <label for="motorista-subgrid-input-${index}">Motorista</label>
+                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
+                                <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
+                                <div class="selected-item-details mt-1"></div>
+                            </div>
+                            <div class="form-group col-md-3 custom-select-container">
+                                <label for="caminhao-subgrid-input-${index}">Caminhão</label>
+                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
+                                <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
+                                <div class="selected-item-details mt-1"></div>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label for="carga-solicitada-input-${index}">Carga Sol.</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton" ${isItemAgendado ? 'disabled' : ''}>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label>Status</label>
+                                <input type="text" class="form-control form-control-sm subgrid-status" value="${isItemAgendado ? 'Agendado!' : ''}" readonly>
+                            </div>
+                            <div class="form-group col-md-1">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid" ${isItemAgendado ? 'disabled' : ''}>
+                                    Agendar
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+            });
+        } else {
+            fertiparDataTableBody.innerHTML = '<tr><td colspan="11" class="text-center">Nenhum dado encontrado.</td></tr>';
+        }
+        updateLastReadStatus();
+    }
+
+    function displaySelectedFertiparItems(items) {
+        selectedFertiparItemsDiv.innerHTML = '';
+        if (items.length === 0) return;
+
+        const heading = '<h5>Itens Fertipar Selecionados</h5>';
+        const cardContainer = $('<div class="d-flex flex-wrap"></div>');
+
+        fetchAgendasProcessarData().then(agendasEmEspera => {
+            const existingAgendas = new Set(agendasEmEspera.map(a => `${a.protocolo}-${a.pedido}`));
+
+            items.forEach((item, index) => {
+                const itemIdentifier = `${item.Protocolo}-${item.Pedido}`;
+                const isItemAgendado = existingAgendas.has(itemIdentifier);
+                
+                const cardHtml = `
+                    <div class="card fertipar-item-card ${isItemAgendado ? 'agendado' : ''}" data-protocolo="${item.Protocolo}">
+                        <div class="card-body p-2">
+                            <div class="form-check">
+                                <input class="form-check-input fertipar-radio" type="radio" name="selectedFertipar" id="fertiparRadio${index}" value="${item.Protocolo}" data-item='${JSON.stringify(item)}' ${isItemAgendado ? 'disabled' : ''}>
+                                <label class="form-check-label" for="fertiparRadio${index}">
+                                    <strong>Protocolo:</strong> ${item.Protocolo || ''}<br>
+                                    <strong>Pedido:</strong> ${item.Pedido || ''}<br>
+                                    <strong>Destino:</strong> ${item.Destino || ''}
+                                </label>
+                            </div>
+                        </div>
+                    </div>`;
+                cardContainer.append(cardHtml);
+            });
+            $(selectedFertiparItemsDiv).append(heading).append(cardContainer);
+        });
+    }
+
+    if (btnLerDadosFertipar) {
+        btnLerDadosFertipar.addEventListener('click', async function() {
+            btnLerDadosFertipar.disabled = true;
+            lastReadStatus.innerHTML = '<span class="text-info">Lendo dados...</span>';
+            fertiparDataTableBody.innerHTML = '<tr><td colspan="11" class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Carregando...</span></div></td></tr>';
+
+            try {
+                const [fertiparResponse, agendasEmEspera] = await Promise.all([
+                    fetch('/api/scrape_fertipar_data', { headers: getAuthHeaders() }),
+                    fetchAgendasProcessarData()
+                ]);
+
+                if (fertiparResponse.status === 401) {
+                    showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                    lastReadStatus.innerHTML = '<span class="text-danger">Não autorizado.</span>';
+                    populateFertiparTable([], agendasEmEspera); // Pass empty data, but still pass agendasEmEspera
+                    return;
+                }
+
+                const result = await fertiparResponse.json();
+
+                if (result.success) {
+                    if (result.data.length > 0) {
+                        populateFertiparTable(result.data, agendasEmEspera);
+                        showAlert('Dados Fertipar lidos com sucesso!', 'success');
+                    } else {
+                        populateFertiparTable([], agendasEmEspera);
+                        showAlert(result.message || 'Não há dados de cotação disponíveis no momento.', 'info');
+                    }
+                    localStorage.setItem(LAST_READ_KEY, new Date().toISOString());
+                    updateLastReadStatus();
+                } else {
+                    populateFertiparTable([], agendasEmEspera);
+                    showAlert(result.message || 'Ocorreu um erro desconhecido ao buscar os dados.', 'danger');
+                    lastReadStatus.innerHTML = '<span class="text-danger">Erro na leitura.</span>';
+                }
+            } catch (error) {
+                console.error('Erro ao ler dados Fertipar:', error);
+                populateFertiparTable([], []); // Pass empty arrays in case of connection error
+                showAlert('Erro de conexão ao tentar buscar os dados da Fertipar.', 'danger');
+                lastReadStatus.innerHTML = '<span class="text-danger">Falha na conexão.</span>';
+            } finally {
+                btnLerDadosFertipar.disabled = false;
+            }
+        });
+    }
+
+    if (fertiparModal) {
+        $(fertiparModal).on('show.bs.modal', () => updateLastReadStatus());
+        
+        // Listener para o novo botão de dados fictícios
+        $('#btnDadosFicticios').on('click', async function() {
+            const fictitiousData = [
+                { "Protocolo": "346562", "Pedido": "928580", "Data": "13/01/2026 10:21", "Situação": "APROVADO", "Destino": "BELA VISTA -MS", "Qtde.": "46.0", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "" },
+                { "Protocolo": "346512", "Pedido": "939686", "Data": "09/01/2026 16:32", "Situação": "APROVADO", "Destino": "COSTA RICA - MS", "Qtde.": "97.5", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "MINIMO MOTO RODO 247,64" },
+                { "Protocolo": "346445", "Pedido": "928580", "Data": "07/01/2026 13:27", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "280.0", "Observação Cotação": "MINIMO MOTO RODO 256,47" },
+                { "Protocolo": "346443", "Pedido": "928580", "Data": "07/01/2026 14:08", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "70.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346442", "Pedido": "928580", "Data": "07/01/2026 14:10", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "2.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346419", "Pedido": "938069", "Data": "05/01/2026 11:52", "Situação": "APROVADO", "Destino": "PARAISO DAS AGUAS - MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "320.0", "Observação Cotação": "MINIMO MOTO RODO 228,45" },
+                { "Protocolo": "346405", "Pedido": "928580", "Data": "13/01/2026 13:05", "Situação": "APROVADO", "Destino": "ANASTACIO - MS", "Qtde.": "35.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO 300,0" },
+                { "Protocolo": "346387", "Pedido": "926074", "Data": "04/12/2025 16:10", "Situação": "APROVADO", "Destino": "ALCINOPOLIS - MS", "Qtde.": "49.0", "Embalagem": "BIG-BAG", "Cotação": "300.0", "Observação Cotação": "MINIMO MOTO RODO 279,88" },
+                { "Protocolo": "346215", "Pedido": "939421", "Data": "07/01/2026 10:21", "Situação": "APROVADO", "Destino": "ROSANA-SP", "Qtde.": "72.0", "Embalagem": "BIG-BAG", "Cotação": "240.0", "Observação Cotação": "MINIMO MOTO BITREM 185,30" },
+                { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situação": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cotação": "620.0", "Observação Cotação": "" }
+            ];
+            
+            const agendasEmEspera = await fetchAgendasProcessarData(); // Fetch agendas here
+            populateFertiparTable(fictitiousData, agendasEmEspera);
+            toastr.info('Dados fictícios carregados na tabela.');
+
+            if(lastReadStatus) {
+                lastReadStatus.innerHTML = '<span class="text-warning font-weight-bold">Exibindo dados fictícios.</span>';
+            }
+            
+            $('#fertiparDataTableBody input[type="checkbox"]').prop('disabled', false);
+            $('#fertiparModal .filter-input').prop('disabled', false);
+            if (btnSaveFertipar) $(btnSaveFertipar).prop('disabled', false);
+        });
+
+        // Lógica de filtragem
+        $(fertiparModal).on('keyup', '.filter-input', function() {
+            const columnIndex = $(this).parent().index(); 
+            const filterValue = $(this).val().toLowerCase();
+
+            $('#fertiparDataTableBody tr.fertipar-main-row').each(function() {
+                const row = $(this);
+                const cell = row.find('td').eq(columnIndex);
+                const cellText = cell.text().toLowerCase();
+                const subgridRow = row.next('.fertipar-subgrid-row');
+
+                if (cellText.includes(filterValue)) {
+                    row.show();
+                    // Não mexer no status do subgrid aqui para manter o estado (aberto/fechado)
+                } else {
+                    row.hide();
+                    if(subgridRow.length > 0) {
+                        subgridRow.hide(); // Esconder subgrid associado se a linha principal for escondida
+                    }
+                }
+            });
+        });
+
+
+
+        // Listener para o botão Limpar Agendas
+        $('#btnLimparAgendas').on('click', async function() {
+            if (!confirm('Tem certeza que deseja limpar TODOS os agendamentos em espera? Esta ação é irreversível.')) {
+                return;
+            }
+
+            toastr.info('Limpando agendamentos...');
+            try {
+                const response = await fetch('/api/agendas/clear', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(result.message || 'Agendamentos limpos com sucesso!', 'success');
+                    loadAndRenderAgendas();
+                } else {
+                    showAlert(result.message || 'Ocorreu um erro ao limpar os agendamentos.', 'danger');
+                }
+            } catch (error) {
+                console.error('Erro ao limpar agendamentos:', error);
+                showAlert('Erro de conexão ao tentar limpar os agendamentos.', 'danger');
+            }
+        });
+    }
+
+    if (formGerarAgenda) {
+        formGerarAgenda.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Previne o refresh da página
+
+            const pesoCarregarInput = document.getElementById('peso-carregar');
+            const pesoCarregar = parseFloat(pesoCarregarInput.value);
+
+            if (!pesoCarregar || pesoCarregar <= 0) {
+                // showAlert('O campo "Peso a Carregar" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
+                pesoCarregarInput.focus();
+                return;
+            }
+
+            // Coleta os dados do formulário
+            const motoristaId = hiddenMotoristaId.value;
+            const caminhaoId = hiddenCaminhaoId.value;
+            const fertiparItemJson = hiddenFertiparItemJson.value;
+            
+            if (!motoristaId || !caminhaoId || !fertiparItemJson) {
+                // showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning'); // Removido toast
+                return;
+            }
+
+            const formData = {
+                motorista_id: motoristaId,
+                caminhao_id: caminhaoId,
+                fertipar_item: JSON.parse(fertiparItemJson), // Parsear a string JSON para um objeto
+                peso_carregar: parseFloat(pesoCarregar) || 0 // Adiciona o peso a carregar, convertendo para float
+            };
+
+            try {
+                const response = await fetch('/agendar', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.status === 401) {
+                    // showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger'); // Removido toast
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Agenda criada com sucesso!', 'success', true);
+                    
+                    const fertiparItem = JSON.parse(fertiparItemJson);
+                    if (fertiparItem && fertiparItem.Protocolo) {
+                        disableFertiparCard(fertiparItem.Protocolo);
+                    }
+                    
+                    showAlert(`Executando RPA para Protocolo ${fertiparItem.Protocolo}...`, 'info', true);
+                    const rpaResult = await executeRpaTask(result.agenda); // Chama a função refatorada
+
+                    if (rpaResult.success) {
+                        showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+                    } else {
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        showAlert(displayMessage, 'danger', true);
+                    }
+                    
+                    clearAgendaForm(); // Limpa os campos
+
+                    // Ativa a aba "Gerar Agenda" e recarrega a lista
+                    $('[href="#gerar-agenda"]').tab('show'); 
+                    loadAndRenderAgendas();
+                } else {
+                    showAlert(result.message || 'Erro ao criar agenda: Erro desconhecido', 'danger');
+                }
+            } catch (error) {
+                console.error('Erro ao agendar:', error);
+                // Removido toast de erro de conexão para simplificar a UI
+                // showAlert('Erro de conexão ao agendar.', 'danger');
+            }
+        });
+    }
+
+    // --- Lógica de Agendamento (Subgrid) ---
+    async function startStatusMonitoring(protocolo, pedido) {
+        showAlert(`Iniciando monitoramento de status para Protocolo ${protocolo}...`, 'info', true);
+    
+        try {
+            const response = await fetch('/api/agendas/monitor_status', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ protocolo: protocolo, pedido: pedido }),
+            });
+    
+            const result = await response.json();
+    
+            if (result.success) {
+                showAlert(`Protocolo ${protocolo}: APROVADO! Iniciando agendamento...`, 'success', true);
+                updateTableRowStatus(protocolo, pedido, 'aprovado_e_agendando'); // A new temporary status
+                return true; // Indicate success to proceed with scheduling
+            } else {
+                const finalStatus = result.status || 'erro'; // 'RECUSADO' or 'ERRO'
+                const message = result.message || `O monitoramento falhou ou o item foi recusado.`;
+                showAlert(`Protocolo ${protocolo}: ${finalStatus}. ${message}`, 'danger', true);
+                updateTableRowStatus(protocolo, pedido, finalStatus.toLowerCase());
+                return false; // Indicate failure
+            }
+        } catch (error) {
+            console.error('Erro de conexão durante o monitoramento de status:', error);
+            showAlert('Erro de conexão com o servidor durante o monitoramento. Verifique o console.', 'danger', true);
+            updateTableRowStatus(protocolo, pedido, 'erro');
+            return false; // Indicate failure
+        }
+    }
+
+    async function agendarViaSubgrid(button) {
+        const subgridContent = $(button).closest('.subgrid-content');
+        const mainRow = subgridContent.closest('.fertipar-subgrid-row').prev('.fertipar-main-row');
+        const statusInput = subgridContent.find('.subgrid-status');
+        
+        const motoristaId = subgridContent.find('.motorista-subgrid-input').attr('data-id');
+        const caminhaoId = subgridContent.find('.caminhao-subgrid-input').attr('data-id');
+        const cargaSolicitada = subgridContent.find('.carga-solicitada-input').val();
+        const fertiparItem = JSON.parse(mainRow.attr('data-item'));
+        const protocolo = fertiparItem.Protocolo;
+        const pedido = fertiparItem.Pedido;
+
+        if (!motoristaId || !caminhaoId || !fertiparItem) {
+            // showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning'); // Removido toast
+            return;
+        }
+        
+        const cargaSolicitadaFloat = parseFloat(cargaSolicitada);
+        if (isNaN(cargaSolicitadaFloat) || cargaSolicitadaFloat <= 0) {
+            // showAlert('O campo "Carga Solicitada" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
+            subgridContent.find('.carga-solicitada-input').focus();
+            return;
+        }
+
+        statusInput.val('Agendando...');
+        button.disabled = true;
+
+        const formData = {
+            motorista_id: motoristaId,
+            caminhao_id: caminhaoId,
+            fertipar_item: fertiparItem,
+            carga_solicitada: parseFloat(cargaSolicitada) || null
+        };
+
+        try {
+            const createAgendaResponse = await fetch('/agendar', {
+                method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData)
+            });
+            const createResult = await createAgendaResponse.json();
+
+            if (createResult.success) {
+                showAlert('Agenda criada no sistema, iniciando monitoramento no site externo...', 'info', true);
+                updateTableRowStatus(protocolo, pedido, 'monitorando'); // New visual status
+    
+                // **NEW LOGIC: Start the monitoring process**
+                const isApproved = await startStatusMonitoring(protocolo, pedido);
+    
+                if (isApproved) {
+                    // If approved, THEN execute the original RPA to schedule
+                    showAlert(`Status APROVADO. Executando agendamento final para Protocolo ${protocolo}...`, 'info', true);
+                    const rpaResult = await executeRpaTask(createResult.agenda); // executeRpaTask already exists
+    
+                    if (rpaResult.success) {
+                        showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
+                        updateTableRowStatus(protocolo, pedido, 'agendado');
+                    } else {
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        showAlert(displayMessage, 'danger', true);
+                        updateTableRowStatus(protocolo, pedido, 'erro');
+                    }
+                    loadAndRenderAgendas();
+                    subgridContent.find('input, button').prop('disabled', true);
+    
+                } else {
+                    // If not approved (rejected or error during monitoring), stop here.
+                    // The status has already been updated by startStatusMonitoring.
+                    button.disabled = false; // Maybe re-enable the button? Or keep it disabled.
+                }
+    
+            } else {
+                showAlert(createResult.message || 'Erro ao criar agenda no sistema.', 'danger');
+                statusInput.val('Erro local!');
+                updateTableRowStatus(protocolo, pedido, 'erro');
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('Erro ao agendar via subgrid:', error);
+            showAlert('Erro de conexão ao agendar. Verifique sua rede e o status do servidor.', 'danger');
+            statusInput.val('Falha na conexão');
+            updateTableRowStatus(protocolo, pedido, 'erro'); // Atualiza visualmente para erro
+            button.disabled = false;
+        }
+    }
+
 
     if (fertiparDataTableBody) {
         // Listener para o botão de agendamento do subgrid

@@ -171,9 +171,33 @@
         <div class="card mt-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0">Agendas executadas</h3>
-                <div>
+                <div class="d-flex align-items-center">
+                    <div class="form-group mb-0 mr-2">
+                        <select id="select-ano-filtro" class="form-control form-control-sm">
+                            <!-- Os anos serão preenchidos via JS, mas podemos deixar um default -->
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0 mr-3">
+                        <select id="select-mes-filtro" class="form-control form-control-sm">
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
                     <button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#fertiparModal"><i class="fas fa-file-alt mr-2"></i>Dados Fertipar</button>
-                    <button type="button" class="btn btn-success btn-sm" id="btnAgendarTodos">
+                    <button type="button" class="btn btn-success btn-sm ml-2" id="btnAgendarTodos">
                         <i class="fas fa-play mr-2"></i>Agendar Todos
                     </button>
                 </div>
@@ -314,16 +338,131 @@
 {% block scripts %}
 {{ super() }}
 <script>
-    // Pega o token JWT injetado pelo Flask e o armazena no localStorage assim que a página carrega.
     const jwtTokenFromFlask = "{{ jwt_token or '' }}";
     if (jwtTokenFromFlask) {
         localStorage.setItem('jwt_token', jwtTokenFromFlask);
-        console.log('Token JWT salvo no localStorage.'); // Adiciona um log para depuração
+        console.log('Token JWT salvo no localStorage.');
     } else {
-        console.warn('Token JWT do Flask não encontrado na renderização da página.'); // Adiciona um log para depuração
+        console.warn('Token JWT do Flask não encontrado na renderização da página.');
     }
 
     $(document).ready(function() {
+        // --- Variáveis e Seletores ---
+        const selectAnoFiltro = $('#select-ano-filtro');
+        const selectMesFiltro = $('#select-mes-filtro');
+        const agendasEmEsperaBody = $('#agendas-em-espera-body');
+
+        // --- Inicialização dos Selects de Ano e Mês ---
+        function inicializarFiltrosDePeriodo() {
+            const dataAtual = new Date();
+            const anoAtual = dataAtual.getFullYear();
+            const mesAtual = dataAtual.getMonth() + 1; // getMonth() retorna 0-11
+
+            // Popular select de anos (ex: ano atual - 2 até ano atual + 1)
+            selectAnoFiltro.empty();
+            for (let i = anoAtual - 2; i <= anoAtual + 1; i++) {
+                const selected = (i === anoAtual) ? 'selected' : '';
+                selectAnoFiltro.append(`<option value="${i}" ${selected}>${i}</option>`);
+            }
+
+            // Selecionar o mês atual
+            selectMesFiltro.val(mesAtual);
+        }
+
+        // --- Função para buscar agendas do Backend ---
+        async function getAgendasExecutadas(ano, mes) {
+            const jwtToken = localStorage.getItem('jwt_token');
+            if (!jwtToken) {
+                toastr.error('Erro de autenticação: Token não encontrado. Por favor, faça login novamente.');
+                return { success: false, agendas: [] };
+            }
+
+            try {
+                const response = await fetch(`/api/agendas_executadas?ano=${ano}&mes=${mes}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Erro ao buscar agendas executadas.');
+                }
+
+                const data = await response.json();
+                return data; // Contém { success: true, agendas: [...] }
+            } catch (error) {
+                console.error('Erro ao buscar agendas executadas:', error);
+                toastr.error(error.message || 'Erro de comunicação ao buscar agendas.');
+                return { success: false, agendas: [] };
+            }
+        }
+
+        // --- Função para renderizar o grid de agendas ---
+        function renderAgendasTable(agendas) {
+            agendasEmEsperaBody.empty(); // Limpa o conteúdo atual
+
+            if (agendas.length === 0) {
+                agendasEmEsperaBody.append('<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o período selecionado.</td></tr>');
+                return;
+            }
+
+            agendas.forEach(agenda => {
+                const row = `
+                    <tr>
+                        <td>${agenda.data_agendamento}</td>
+                        <td>${agenda.motorista_nome}</td>
+                        <td>${agenda.caminhao_placa}</td>
+                        <td>${agenda.fertipar_protocolo}</td>
+                        <td>${agenda.fertipar_pedido || ''}</td>
+                        <td>${agenda.fertipar_destino || ''}</td>
+                        <td>${agenda.peso_carregar || ''}</td>
+                        <td><span class="badge badge-warning">${agenda.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" title="Iniciar"><i class="fas fa-play"></i></button>
+                            <button class="btn btn-sm btn-danger" title="Cancelar"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                `;
+                agendasEmEsperaBody.append(row);
+            });
+        }
+
+        // --- Função principal de atualização do grid (polling) ---
+        async function atualizarGridAgendas() {
+            const anoSelecionado = selectAnoFiltro.val();
+            const mesSelecionado = selectMesFiltro.val();
+
+            if (!anoSelecionado || !mesSelecionado) {
+                console.warn('Ano ou mês não selecionados, pulando atualização do grid.');
+                return;
+            }
+
+            const data = await getAgendasExecutadas(anoSelecionado, mesSelecionado);
+            if (data.success) {
+                renderAgendasTable(data.agendas);
+            }
+        }
+
+        // --- Função para filtrar o grid (onChange dos selects) ---
+        function filtrarGrid() {
+            atualizarGridAgendas();
+        }
+
+        // --- Event Listeners ---
+        selectAnoFiltro.on('change', filtrarGrid);
+        selectMesFiltro.on('change', filtrarGrid);
+
+        // --- Inicialização ---
+        inicializarFiltrosDePeriodo(); // Configura os selects com ano/mês atual
+        atualizarGridAgendas(); // Carrega o grid pela primeira vez
+
+        // --- Polling (Auto-refresh) ---
+        setInterval(atualizarGridAgendas, 5000);
+
+        // --- Lógica existente para o botão "Teste Robô" ---
         $(document).on('click', '#teste-robo-btn', function() {
             console.log('Botão "Teste Robô" clicado (via jQuery).');
 

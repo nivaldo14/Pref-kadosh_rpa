@@ -16,7 +16,7 @@ import json
 basedir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(basedir, 'backend'))
 
-from rpa_service import scrape_fertipar_data
+from rpa_service import scrape_fertipar_data, monitor_agendamento_status
 from rpa_task_processor import process_agendamento_main_task
 
 from datetime import datetime, timedelta, timezone
@@ -482,7 +482,48 @@ def cadastros():
                            motoristas=motoristas,
                            ufs=ufs,
                            tipos_carroceria=tipos_carroceria,
-                           active_tab=active_tab)
+                                                       active_tab=active_tab)
+
+@app.route('/api/agendas_executadas', methods=['GET'])
+@login_required
+def get_agendas_executadas():
+    try:
+        ano = request.args.get('ano', type=int)
+        mes = request.args.get('mes', type=int)
+
+        if not ano or not mes:
+            return jsonify(success=False, message="Parâmetros 'ano' e 'mes' são obrigatórios."), 400
+
+        # Query agendas, joining with Motorista and Caminhao to get related data
+        agendas = db.session.query(
+            Agenda, Motorista, Caminhao
+        ).join(Motorista, Agenda.motorista_id == Motorista.id
+        ).join(Caminhao, Agenda.caminhao_id == Caminhao.id
+        ).filter(
+            func.extract('year', Agenda.data_agendamento) == ano,
+            func.extract('month', Agenda.data_agendamento) == mes
+        ).order_by(Agenda.data_agendamento.desc()).all()
+
+        # Format data for JSON response
+        results = []
+        for agenda, motorista, caminhao in agendas:
+            results.append({
+                'id': agenda.id,
+                'data_agendamento': agenda.data_agendamento.strftime('%d/%m/%Y %H:%M'),
+                'motorista_nome': motorista.nome,
+                'caminhao_placa': caminhao.placa,
+                'fertipar_protocolo': agenda.fertipar_protocolo,
+                'fertipar_pedido': agenda.fertipar_pedido,
+                'fertipar_destino': agenda.fertipar_destino,
+                'peso_carregar': str(agenda.carga_solicitada), # Convert Decimal to string
+                'status': agenda.status
+            })
+
+        return jsonify(success=True, agendas=results)
+
+    except Exception as e:
+        app.logger.error(f"Erro ao buscar agendas executadas: {e}")
+        return jsonify(success=False, message="Erro interno ao buscar agendas."), 500
 
 @app.route('/add_caminhao', methods=['POST'])
 @login_required
@@ -733,8 +774,20 @@ def agendas_processar():
 @app.route('/api/agendas_agendadas') # New endpoint for agendado status
 @login_required
 def agendas_agendadas():
-    agendas = Agenda.query.filter_by(status='agendado').order_by(Agenda.data_agendamento.desc()).all()
-    return jsonify([agenda.to_dict() for agenda in agendas])
+    try:
+        year = request.args.get('year', default=datetime.now().year, type=int)
+        month = request.args.get('month', default=datetime.now().month, type=int)
+
+        # Query agendas based on the provided year and month, for all statuses
+        agendas = Agenda.query.filter(
+            extract('year', Agenda.data_agendamento) == year,
+            extract('month', Agenda.data_agendamento) == month
+        ).order_by(Agenda.data_agendamento.desc()).all()
+        
+        return jsonify([agenda.to_dict(for_socket=True) for agenda in agendas])
+    except Exception as e:
+        print(f"Error in /api/agendas_agendadas: {e}")
+        return jsonify(error=str(e)), 500
 
 @app.route('/api/agendas/updates')
 @login_required
@@ -897,6 +950,57 @@ def clear_agendas():
         db.session.rollback()
         return jsonify(success=False, message=f'Erro ao limpar agendamentos: {e}'), 500
 
+@app.route('/api/agendas/monitor_status', methods=['POST'])
+@dev_required # Or @login_required
+def monitor_status_task():
+    """
+    Triggers the RPA task to monitor an order's status.
+    """
+    data = request.get_json()
+    protocolo = data.get('protocolo')
+    pedido = data.get('pedido')
+
+    if not all([protocolo, pedido]):
+        return jsonify(success=False, message="Protocolo e Pedido são obrigatórios."), 400
+
+    config_db = db.session.query(ConfiguracaoRobo).first()
+    if not config_db:
+        return jsonify(success=False, message="Configuração do robô não encontrada."), 500
+        
+    sessao_rpa = db.session.query(RpaSessao).first()
+    storage_state = sessao_rpa.storage_state if sessao_rpa else None
+
+    # Structure params for the RPA function
+    rpa_config_params = {
+        "url_acesso": config_db.url_acesso,
+        "filial": config_db.filial,
+        "usuario_site": config_db.usuario_site,
+        "senha_site": config_db.senha_site,
+        "head_evento": config_db.head_evento,
+        "storage_state": storage_state
+    }
+    
+    try:
+        # Run the monitoring task
+        result = asyncio.run(monitor_agendamento_status(rpa_config_params, protocolo, pedido))
+
+        # Save new session state if login happened
+        new_storage_state = result.get('new_storage_state')
+        if new_storage_state:
+            if sessao_rpa:
+                sessao_rpa.storage_state = new_storage_state
+                sessao_rpa.last_updated = datetime.now(timezone.utc)
+            else:
+                sessao_rpa = RpaSessao(storage_state=new_storage_state)
+                db.session.add(sessao_rpa)
+            db.session.commit()
+
+        return jsonify(result)
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(success=False, status="ERRO", message=f"Erro interno do servidor ao monitorar status: {e}"), 500
+        
 @app.route('/api/agendas/execute/<int:agenda_id>', methods=['POST'])
 @dev_required
 def execute_agenda_task(agenda_id):
