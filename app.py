@@ -215,7 +215,7 @@ class Agenda(db.Model):
         return {
             'id': self.id,
             'motorista': motorista_info,
-            'caminhao': caminhao_display if for_socket else caminhao_data,
+            'caminhao': caminhao_data,
             'protocolo': self.fertipar_protocolo,
             'pedido': self.fertipar_pedido,
             'destino': self.fertipar_destino,
@@ -983,6 +983,14 @@ def monitor_status_task():
     try:
         # Run the monitoring task
         result = asyncio.run(monitor_agendamento_status(rpa_config_params, protocolo, pedido))
+
+        # Se o status for 'RECUSADO' ou 'ERRO', atualize o banco de dados
+        final_status = result.get('status')
+        if final_status and (final_status == 'RECUSADO' or final_status == 'ERRO'):
+            agenda_to_update = db.session.query(Agenda).filter_by(fertipar_protocolo=protocolo, fertipar_pedido=pedido).first()
+            if agenda_to_update:
+                agenda_to_update.status = final_status.lower()
+                db.session.commit()
 
         # Save new session state if login happened
         new_storage_state = result.get('new_storage_state')

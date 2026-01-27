@@ -12,7 +12,6 @@
         <li class="nav-item"><a class="nav-link {% if active_tab == 'caminhoes' %}active{% endif %}" id="caminhoes-tab" data-toggle="tab" href="#caminhoes" role="tab" aria-controls="caminhoes"><i class="fas fa-truck mr-2"></i>Caminhões</a></li>
         <li class="nav-item"><a class="nav-link {% if active_tab == 'motoristas' %}active{% endif %}" id="motoristas-tab" data-toggle="tab" href="#motoristas" role="tab" aria-controls="motoristas"><i class="fas fa-id-card mr-2"></i>Motoristas</a></li>
         <li class="nav-item"><a class="nav-link {% if active_tab == 'gerar-agenda' %}active{% endif %}" id="gerar-agenda-tab" data-toggle="tab" href="#gerar-agenda" role="tab" aria-controls="gerar-agenda"><i class="fas fa-calendar-alt mr-2"></i>Gerar Agenda</a></li>
-        <li class="nav-item"><a class="nav-link {% if active_tab == 'cargas' %}active{% endif %}" id="cargas-tab" data-toggle="tab" href="#cargas" role="tab" aria-controls="cargas"><i class="fas fa-history mr-2"></i>Histórico de Agendas</a></li>
     </ul>
 </div>
 
@@ -217,6 +216,17 @@
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
+                            <tr id="filter-row">
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="0"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="1"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="2"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="3"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="4"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="5"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="6"></div></th>
+                                <th><div class="filter-wrapper"><input type="text" class="form-control form-control-sm" placeholder="Filtrar..." data-column="7"></div></th>
+                                <th></th> <!-- Coluna de Ações sem filtro -->
+                            </tr>
                         </thead>
                         <tbody id="agendas-em-espera-body">
                             {% for agenda in agendas %}
@@ -241,24 +251,7 @@
     </div>
 
     <!-- Seção de Histórico de Agendas -->
-    <div class="tab-pane fade {% if active_tab == 'cargas' %}show active{% endif %}" id="cargas" role="tabpanel" aria-labelledby="cargas-tab">
-         <div class="card mt-4">
-            <div class="card-header"><h3 class="card-title mb-0">Histórico de Agendas Executadas</h3></div>
-            <div class="card-body">
-                <p class="text-muted">Esta aba mostra o histórico de agendas criadas e executadas pelo robô.</p>
-                <table class="table table-striped table-sm">
-                    <thead><tr><th>Descrição</th><th>Data</th><th>Caminhão</th><th>Motorista</th><th>Ações</th></tr></thead>
-                    <tbody>
-                        {% for carga in cargas %}
-                        <tr><td>{{ carga.descricao }}</td><td>{{ carga.data }}</td><td>{{ carga.caminhao.placa }}</td><td>{{ carga.motorista.nome }}</td>
-                            <td><a href="{{ url_for('delete_carga', id=carga.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    
 </div>
 
 <!-- Modal Fertipar -->
@@ -347,121 +340,6 @@
     }
 
     $(document).ready(function() {
-        // --- Variáveis e Seletores ---
-        const selectAnoFiltro = $('#select-ano-filtro');
-        const selectMesFiltro = $('#select-mes-filtro');
-        const agendasEmEsperaBody = $('#agendas-em-espera-body');
-
-        // --- Inicialização dos Selects de Ano e Mês ---
-        function inicializarFiltrosDePeriodo() {
-            const dataAtual = new Date();
-            const anoAtual = dataAtual.getFullYear();
-            const mesAtual = dataAtual.getMonth() + 1; // getMonth() retorna 0-11
-
-            // Popular select de anos (ex: ano atual - 2 até ano atual + 1)
-            selectAnoFiltro.empty();
-            for (let i = anoAtual - 2; i <= anoAtual + 1; i++) {
-                const selected = (i === anoAtual) ? 'selected' : '';
-                selectAnoFiltro.append(`<option value="${i}" ${selected}>${i}</option>`);
-            }
-
-            // Selecionar o mês atual
-            selectMesFiltro.val(mesAtual);
-        }
-
-        // --- Função para buscar agendas do Backend ---
-        async function getAgendasExecutadas(ano, mes) {
-            const jwtToken = localStorage.getItem('jwt_token');
-            if (!jwtToken) {
-                toastr.error('Erro de autenticação: Token não encontrado. Por favor, faça login novamente.');
-                return { success: false, agendas: [] };
-            }
-
-            try {
-                const response = await fetch(`/api/agendas_executadas?ano=${ano}&mes=${mes}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer ' + jwtToken,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Erro ao buscar agendas executadas.');
-                }
-
-                const data = await response.json();
-                return data; // Contém { success: true, agendas: [...] }
-            } catch (error) {
-                console.error('Erro ao buscar agendas executadas:', error);
-                toastr.error(error.message || 'Erro de comunicação ao buscar agendas.');
-                return { success: false, agendas: [] };
-            }
-        }
-
-        // --- Função para renderizar o grid de agendas ---
-        function renderAgendasTable(agendas) {
-            agendasEmEsperaBody.empty(); // Limpa o conteúdo atual
-
-            if (agendas.length === 0) {
-                agendasEmEsperaBody.append('<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o período selecionado.</td></tr>');
-                return;
-            }
-
-            agendas.forEach(agenda => {
-                const row = `
-                    <tr>
-                        <td>${agenda.data_agendamento}</td>
-                        <td>${agenda.motorista_nome}</td>
-                        <td>${agenda.caminhao_placa}</td>
-                        <td>${agenda.fertipar_protocolo}</td>
-                        <td>${agenda.fertipar_pedido || ''}</td>
-                        <td>${agenda.fertipar_destino || ''}</td>
-                        <td>${agenda.peso_carregar || ''}</td>
-                        <td><span class="badge badge-warning">${agenda.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-info" title="Iniciar"><i class="fas fa-play"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Cancelar"><i class="fas fa-times"></i></button>
-                        </td>
-                    </tr>
-                `;
-                agendasEmEsperaBody.append(row);
-            });
-        }
-
-        // --- Função principal de atualização do grid (polling) ---
-        async function atualizarGridAgendas() {
-            const anoSelecionado = selectAnoFiltro.val();
-            const mesSelecionado = selectMesFiltro.val();
-
-            if (!anoSelecionado || !mesSelecionado) {
-                console.warn('Ano ou mês não selecionados, pulando atualização do grid.');
-                return;
-            }
-
-            const data = await getAgendasExecutadas(anoSelecionado, mesSelecionado);
-            if (data.success) {
-                renderAgendasTable(data.agendas);
-            }
-        }
-
-        // --- Função para filtrar o grid (onChange dos selects) ---
-        function filtrarGrid() {
-            atualizarGridAgendas();
-        }
-
-        // --- Event Listeners ---
-        selectAnoFiltro.on('change', filtrarGrid);
-        selectMesFiltro.on('change', filtrarGrid);
-
-        // --- Inicialização ---
-        inicializarFiltrosDePeriodo(); // Configura os selects com ano/mês atual
-        atualizarGridAgendas(); // Carrega o grid pela primeira vez
-
-        // --- Polling (Auto-refresh) ---
-        setInterval(atualizarGridAgendas, 5000);
-
         // --- Lógica existente para o botão "Teste Robô" ---
         $(document).on('click', '#teste-robo-btn', function() {
             console.log('Botão "Teste Robô" clicado (via jQuery).');
@@ -482,19 +360,17 @@
                 motorista: {
                     id: selectedMotoristaOption ? selectedMotoristaOption.value : null,
                     nome: selectedMotoristaOption ? selectedMotoristaOption.text : null,
-                    // Usando o spread operator (...) para pegar todos os data-attributes
                     ...(selectedMotoristaOption ? selectedMotoristaOption.dataset : {})
                 },
                 caminhao: {
                     id: selectedCaminhaoOption ? selectedCaminhaoOption.value : null,
-                    placa_display: selectedCaminhaoOption ? selectedCaminhaoOption.text : null, // O texto da opção é a placa
-                    // Usando o spread operator (...) para pegar todos os data-attributes
+                    placa_display: selectedCaminhaoOption ? selectedCaminhaoOption.text : null,
                     ...(selectedCaminhaoOption ? selectedCaminhaoOption.dataset : {})
                 },
                 outros_dados: {
                     peso_a_carregar: document.getElementById('peso-carregar').value,
-                    contrato: '', // Valor vazio, será preenchido por outra fonte no futuro
-                    pedido: ''    // Valor vazio, será preenchido por outra fonte no futuro
+                    contrato: '',
+                    pedido: ''
                 }
             };
             
@@ -504,7 +380,7 @@
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + jwtToken
                 },
-                body: JSON.stringify({ select_data: selectData }) // Envia os dados dos selects para o backend
+                body: JSON.stringify({ select_data: selectData })
             })
             .then(response => {
                 if (!response.ok) {
@@ -516,8 +392,6 @@
                 console.log('Resposta do servidor:', data);
                 if (data.success) {
                     toastr.success(data.message || 'Comando enviado. Verifique o console do servidor.');
-                } else {
-                    // O erro já foi lançado e será pego pelo .catch
                 }
             })
             .catch(error => {

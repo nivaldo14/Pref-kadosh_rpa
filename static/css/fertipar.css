@@ -177,3 +177,9 @@
     font-weight: 600;
     color: #495057;
 }
+
+/* Adicionado para destacar a linha com status 'RECUSADO' */
+.recusado-row {
+    background-color: #fff3cd !important; /* Amarelo claro do Bootstrap para 'warning' */
+    font-weight: 500;
+}

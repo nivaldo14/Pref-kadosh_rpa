@@ -1,0 +1,30 @@
+--- ERRO EM 2026-01-25 21:33:23.082998 ---
+Erro na rota /api/scrape_fertipar_data: Page.screenshot: Target page, context or browser has been closed
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\app.py", line 878, in scrape_data
+    data = asyncio.run(scrape_fertipar_data(config))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\arqProgramas\Python\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "D:\arqProgramas\Python\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\arqProgramas\Python\Lib\asyncio\base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\transpGaucho\kadoshBot\Pref-kadosh_rpa\backend\rpa_service.py", line 197, in scrape_fertipar_data
+    await page.screenshot(path="error_screenshot.png")
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\MCP\dlvry\python\V2\.venv\Lib\site-packages\playwright\async_api\_generated.py", line 9788, in screenshot
+    await self._impl_obj.screenshot(
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\MCP\dlvry\python\V2\.venv\Lib\site-packages\playwright\_impl\_page.py", line 814, in screenshot
+    encoded_binary = await self._channel.send(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\MCP\dlvry\python\V2\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Nivaldo\Desktop\Desenvolvimento\2026\MCP\dlvry\python\V2\.venv\Lib\site-packages\playwright\_impl\_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Page.screenshot: Target page, context or browser has been closed
+

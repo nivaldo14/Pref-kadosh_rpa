@@ -20,9 +20,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const caminhaoInfoDiv = document.getElementById('agenda-caminhao-info');
 
     // Tabela de Agendas Executadas
+    const agendasExecutadasBody = document.getElementById('agendas-executadas-body');
     const agendasEmEsperaBody = document.getElementById('agendas-em-espera-body');
 
-    // Filtros de Ano e Mês
+    // Filtros de Ano e M├¬s
     const selectAnoFiltro = document.getElementById('select-ano-filtro');
     const selectMesFiltro = document.getElementById('select-mes-filtro');
 
@@ -31,9 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const FIVE_MINUTES_MS = 5 * 60 * 1000;
     const POLLING_INTERVAL_MS = 5000; // 5 segundos para o auto-refresh
 
-    // --- Funções Auxiliares ---
+    // --- Fun├º├Áes Auxiliares ---
     function getAuthHeaders() {
-        const token = localStorage.getItem('jwt_token'); // Assumindo que o token é salvo aqui no login
+        const token = localStorage.getItem('jwt_token'); // Assumindo que o token ├® salvo aqui no login
         const headers = {
             'Content-Type': 'application/json'
         };
@@ -67,11 +68,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         // Caso especial para a mensagem de site bloqueado
-        if (message === "Dados Não coletados, site já bloqueado!") {
-            toastr.options.timeOut = 0; // Fica visível até ser fechado
+        if (message === "Dados N├úo coletados, site j├í bloqueado!") {
+            toastr.options.timeOut = 0; // Fica vis├¡vel at├® ser fechado
             type = 'warning'; // Usa o tipo 'aviso' (amarelo)
         } else if (type === 'danger') {
-            toastr.options.timeOut = 0; // Erros reais também ficam visíveis
+            toastr.options.timeOut = 0; // Erros reais tamb├®m ficam vis├¡veis
         } else if (isFixed) {
             toastr.options.timeOut = 0; // Fixed toast
             toastr.options.extendedTimeOut = 0;
@@ -84,15 +85,15 @@ document.addEventListener('DOMContentLoaded', function() {
         toastr[toastrType](message);
     }
 
-    // Funções auxiliares para encontrar e atualizar o status visual da linha
+    // Fun├º├Áes auxiliares para encontrar e atualizar o status visual da linha
     function updateTableRowStatus(protocolo, pedido, newStatus) {
         // Encontra a linha principal usando o protocolo (e opcionalmente o pedido para maior especificidade)
-        // Usamos um atributo de dados 'data-protocolo-pedido' para uma identificação única
+        // Usamos um atributo de dados 'data-protocolo-pedido' para uma identifica├º├úo ├║nica
         const rowIdentifier = `${protocolo}-${pedido}`;
         const mainRow = $(`#fertiparDataTableBody tr.fertipar-main-row[data-protocolo="${protocolo}"][data-pedido="${pedido}"]`);
         
         if (mainRow.length === 0) {
-            console.warn(`Linha para protocolo ${protocolo} e pedido ${pedido} não encontrada.`);
+            console.warn(`Linha para protocolo ${protocolo} e pedido ${pedido} n├úo encontrada.`);
             return;
         }
 
@@ -103,8 +104,8 @@ document.addEventListener('DOMContentLoaded', function() {
         statusInput.val(newStatus);
 
         // Remove classes de status antigas
-        mainRow.removeClass('agendado-row status-changed-row erro-row'); // Added erro-row
-        subgridRow.removeClass('agendado-row status-changed-row erro-row'); // Added erro-row
+        mainRow.removeClass('agendado-row status-changed-row erro-row recusado-row'); // Added erro-row and recusado-row
+        subgridRow.removeClass('agendado-row status-changed-row erro-row recusado-row'); // Added erro-row and recusado-row
 
         // Adiciona a classe apropriada com base no novo status
         if (newStatus === 'espera') {
@@ -113,14 +114,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (newStatus === 'erro' || newStatus === 'erro (Dev)') { // Added condition for error
             mainRow.addClass('erro-row');
             subgridRow.addClass('erro-row');
-        }
-        else {
+        } else if (newStatus === 'recusado') { // Adicionada condição para 'recusado'
+            mainRow.addClass('recusado-row'); // Amarelo
+            subgridRow.addClass('recusado-row');
+        } else {
             mainRow.addClass('status-changed-row'); // Status diferente de espera (azul)
             subgridRow.addClass('status-changed-row');
         }
     }
 
-    // Funções auxiliares para limpar e atualizar UI
+    // Fun├º├Áes auxiliares para limpar e atualizar UI
     function clearAgendaForm() {
         motoristaSelect.value = '';
         caminhaoSelect.value = '';
@@ -130,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hiddenCaminhaoId.value = '';
         hiddenFertiparItemJson.value = '';
         
-        // Limpar seleção de Fertipar
+        // Limpar sele├º├úo de Fertipar
         $('.fertipar-radio').prop('checked', false);
         $('.fertipar-item-card').removeClass('selected');
     }
@@ -151,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // fetchAgendasProcessarData não é mais usado da mesma forma, mas mantido por enquanto
+    // fetchAgendasProcessarData n├úo ├® mais usado da mesma forma, mas mantido por enquanto
     function fetchAgendasProcessarData() { 
         return fetch('/api/agendas_processar', { headers: getAuthHeaders() })
             .then(response => {
@@ -162,12 +165,12 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Erro ao buscar agendas para processar:', error); 
-                showAlert('Falha ao carregar agendas para processar. Verifique sua conexão ou autenticação.', 'danger'); 
+                showAlert('Falha ao carregar agendas para processar. Verifique sua conex├úo ou autentica├º├úo.', 'danger'); 
                 return []; 
             });
     }
 
-    // Nova função para buscar agendas, agora com filtros de ano e mês
+    // Nova fun├º├úo para buscar agendas, agora com filtros de ano e m├¬s
     async function fetchAgendasData(year, month) {
         let url = `/api/agendas_agendadas?year=${year}&month=${month}`;
         try {
@@ -178,42 +181,47 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar agendas:', error);
-            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+            showAlert('Falha ao carregar agendas. Verifique sua conex├úo ou autentica├º├úo.', 'danger');
             return [];
         }
     }
 
-    // Nova função para renderizar as agendas no DOM
+    // Nova fun├º├úo para renderizar as agendas no DOM
     async function renderAgendas(agendas) { 
-        agendasEmEsperaBody.innerHTML = ''; // Limpa o conteúdo atual da tabela
+        if (!agendasEmEsperaBody) return; // Se o elemento n├úo existe na p├ígina, n├úo faz nada
+        agendasEmEsperaBody.innerHTML = ''; // Limpa o conte├║do atual da tabela
 
         if (agendas.length === 0) {
-            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o período selecionado.</td></tr>';
+            agendasEmEsperaBody.innerHTML = '<tr><td colspan="9" class="text-center">Nenhuma agenda encontrada para o per├¡odo selecionado.</td></tr>';
             return;
         }
 
         for (const agenda of agendas) { 
             const row = agendasEmEsperaBody.insertRow();
             
-            // Determine badge class based on status
-            let statusBadgeClass = 'badge-secondary'; // Default
-            let rowClass = ''; // New variable for row class
+            // L├│gica de Status e Cor
+            let statusBadgeClass = 'badge-secondary'; // Cor padr├úo
+            let rowClass = ''; // Classe da linha
+            const status = agenda.status ? agenda.status.toLowerCase() : '';
 
-            if (agenda.status === 'agendado') {
+            if (status === 'agendado') {
                 statusBadgeClass = 'badge-success';
-            } else if (agenda.status === 'erro' || agenda.status === 'erro (Dev)') { 
+            } else if (status.includes('erro')) { 
                 statusBadgeClass = 'badge-danger';
-                rowClass = 'erro-row'; 
-            } else if (agenda.status === 'processando' || agenda.status === 'processando (Dev)' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando') { // Added new statuses
+                rowClass = 'table-danger'; // Vermelho para a linha toda
+            } else if (['processando', 'monitorando', 'aprovado_e_agendando'].some(s => status.includes(s))) {
                 statusBadgeClass = 'badge-info';
-            } else if (agenda.status === 'cancelado' || agenda.status === 'recusado') { // Added 'recusado'
+            } else if (status === 'cancelado' || status === 'recusado') { 
                 statusBadgeClass = 'badge-warning';
-            } else if (agenda.status === 'espera') {
-                statusBadgeClass = 'badge-primary'; // A new color for 'espera' to differentiate
+                if (status === 'recusado') {
+                    rowClass = 'table-warning'; // Amarelo para a linha toda
+                }
+            } else if (status === 'espera') {
+                statusBadgeClass = 'badge-primary';
             }
 
-            // Formata as informações do caminhão a partir do objeto
-            let caminhaoDisplay = agenda.caminhao.placa;
+            // Formata as informa├º├Áes do caminh├úo
+            let caminhaoDisplay = agenda.caminhao.placa || 'N/A';
             if (agenda.caminhao.tipo_carroceria) {
                 caminhaoDisplay += ` - ${agenda.caminhao.tipo_carroceria}`;
             }
@@ -221,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 caminhaoDisplay += ` | ${agenda.caminhao.reboques.join(', ')}`;
             }
 
-            row.className = rowClass; // Apply the row class
+            row.className = rowClass; // Aplica a classe de cor na linha
             row.innerHTML = `
                 <td>${agenda.data_agendamento}</td>
                 <td>${agenda.motorista}</td>
@@ -230,13 +238,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${agenda.pedido}</td>
                 <td>${agenda.destino}</td>
                 <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td>
-                <td><span class="badge ${statusBadgeClass}">${agenda.status.toUpperCase()}</span></td>
+                <td><span class="badge ${statusBadgeClass}">${(agenda.status || '').toUpperCase()}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${agenda.status === 'agendado' || agenda.status === 'processando' || agenda.status === 'monitorando' || agenda.status === 'aprovado_e_agendando' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
-                    <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${status !== 'espera' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
+                    <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}" ${status !== 'espera' ? 'disabled' : ''}><i class="fas fa-times"></i></button>
                 </td>
             `;
-            // Add event listener for the new execute button
+
             const executeButton = row.querySelector('.btn-executar-agenda');
             if (executeButton) {
                 executeButton.addEventListener('click', async () => {
@@ -256,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.status === 401) {
-                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                showAlert('Sess├úo expirada ou inv├ílida. Por favor, fa├ºa login novamente.', 'danger');
                 return;
             }
 
@@ -266,18 +274,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert(result.message || 'Comando RPA (DEV) executado com sucesso!', 'success');
                 console.log(`[Dev Mode] Resposta do Flask: ${result.message}`);
             } else {
-                showAlert(result.message || 'Ocorreu um erro durante a execução do RPA (DEV).', 'danger', true);
+                showAlert(result.message || 'Ocorreu um erro durante a execu├º├úo do RPA (DEV).', 'danger', true);
                 console.error(`[Dev Mode] Erro do Flask: ${result.message}`);
             }
         } catch (error) {
             console.error('[Dev Mode] Erro ao chamar executeAgendaDevMode:', error);
-            showAlert('Erro de conexão com o servidor ao tentar executar o RPA (DEV). Verifique sua rede e o status do servidor.', 'danger', true);
+            showAlert('Erro de conex├úo com o servidor ao tentar executar o RPA (DEV). Verifique sua rede e o status do servidor.', 'danger', true);
         }
-        // Não é necessário loadAndRenderAgendas aqui, pois é apenas um log no modo dev
+        // N├úo ├® necess├írio loadAndRenderAgendas aqui, pois ├® apenas um log no modo dev
     }
 
 
-    // --- Lógica Principal ---
+    // --- L├│gica Principal ---
 
     function showInfoToast(title, data) {
         let content = '';
@@ -301,9 +309,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             return result; // Retorna o resultado JSON bruto do backend
         } catch (error) {
-            console.error('Erro de conexão ao chamar executeRpaTask:', error);
+            console.error('Erro de conex├úo ao chamar executeRpaTask:', error);
             // Retorna um objeto de erro para que o chamador possa lidar com ele
-            return { success: false, message: 'Erro de conexão com o servidor ao tentar executar o RPA. Verifique sua rede e o status do servidor.', user_facing_message: 'Erro de conexão com o servidor.' };
+            return { success: false, message: 'Erro de conex├úo com o servidor ao tentar executar o RPA. Verifique sua rede e o status do servidor.', user_facing_message: 'Erro de conex├úo com o servidor.' };
         }
     }
 
@@ -314,13 +322,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (agendaId) {
                 await executeAgendaDevMode(parseInt(agendaId));
             } else {
-                showAlert("ID da agenda não fornecido. Operação cancelada.", 'warning');
+                showAlert("ID da agenda n├úo fornecido. Opera├º├úo cancelada.", 'warning');
             }
         });
     }
 
 
-    // 1. Atualizar informações e campos ocultos na seleção
+    // 1. Atualizar informa├º├Áes e campos ocultos na sele├º├úo
     if (motoristaSelect) {
         motoristaSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
@@ -388,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 2. Lógica do Modal Fertipar
+    // 2. L├│gica do Modal Fertipar
     function updateLastReadStatus() {
         const lastRead = localStorage.getItem(LAST_READ_KEY);
         let needsUpdate = false;
@@ -397,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const lastReadDate = new Date(lastRead);
             const now = new Date();
             const diff = now.getTime() - lastReadDate.getTime();
-            let statusText = `Última leitura: ${formatDateTime(lastReadDate)}`;
+            let statusText = `├Ültima leitura: ${formatDateTime(lastReadDate)}`;
             if (diff > FIVE_MINUTES_MS) {
                 statusText += ' <span class="text-danger font-weight-bold">(Precisa atualizar!)</span>';
                 needsUpdate = true;
@@ -415,24 +423,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateFertiparTable(data, agendasEmEspera = []) {
         fertiparDataTableBody.innerHTML = '';
-        // existingAgendas deve armazenar a combinação protocolo-pedido
         const existingAgendas = new Set(agendasEmEspera.map(a => `${a.protocolo}-${a.pedido}`));
 
         if (data && data.length > 0) {
             data.forEach((item, index) => {
-                // Verificar se o item já está agendado usando protocolo-pedido
                 const isItemAgendado = existingAgendas.has(`${item.Protocolo}-${item.Pedido}`);
+                const isItemRecusado = item['Situação'] === 'RECUSADO'; // Nova verificação para 'RECUSADO'
                 const row = fertiparDataTableBody.insertRow();
                 row.setAttribute('data-item', JSON.stringify(item));
                 row.classList.add('fertipar-main-row');
+
                 if (isItemAgendado) {
-                    row.classList.add('agendado-row'); // Nova classe para linha principal agendada
+                    row.classList.add('agendado-row');
+                } else if (isItemRecusado) {
+                    row.classList.add('recusado-row'); // Adiciona a classe para a linha recusada
                 }
+
                 row.setAttribute('data-protocolo', item.Protocolo);
-                row.setAttribute('data-pedido', item.Pedido); // Adicionado para identificar unicamente
+                row.setAttribute('data-pedido', item.Pedido);
                 row.innerHTML = `
-                    <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid" ${isItemAgendado ? 'disabled' : ''}><i class="fas fa-plus"></i></button></td>
-                    <td><input type="checkbox" name="selecionar_item_modal" value="${index}" ${isItemAgendado ? 'disabled' : ''}></td>
+                    <td><button class="btn btn-sm btn-outline-secondary btn-toggle-subgrid"><i class="fas fa-plus"></i></button></td>
+                    <td><input type="checkbox" name="selecionar_item_modal" value="${index}" ${isItemAgendado || isItemRecusado ? 'disabled' : ''}></td>
                     <td><strong>${item.Protocolo || ''}</strong></td>
                     <td><strong>${item.Pedido || ''}</strong></td>
                     <td>${item.Data || ''}</td>
@@ -440,14 +451,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${item.Destino || ''}</td>
                     <td><strong>${item['Qtde.'] || ''}</strong></td>
                     <td>${item.Embalagem || ''}</td>
-                    <td>${item['Cotação'] || ''}</td>
-                    <td>${item['Observação Cotação'] || ''}</td>
+                    <td>${item['Cota├º├úo'] || ''}</td>
+                    <td>${item['Observa├º├úo Cota├º├úo'] || ''}</td>
                 `;
 
                 const subgridRow = fertiparDataTableBody.insertRow();
                 subgridRow.classList.add('fertipar-subgrid-row');
                 if (isItemAgendado) {
-                    subgridRow.classList.add('agendado-row'); // Nova classe para subgrid agendado
+                    subgridRow.classList.add('agendado-row');
+                } else if (isItemRecusado) {
+                    subgridRow.classList.add('recusado-row'); // Adiciona a classe para o subgrid recusado
                 }
                 subgridRow.style.display = 'none';
                 subgridRow.innerHTML = `
@@ -455,27 +468,27 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="subgrid-content p-2 shadow-sm" style="width: 100%; display: flex; padding: 10px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
                             <div class="form-group col-md-3 custom-select-container">
                                 <label for="motorista-subgrid-input-${index}">Motorista</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
+                                <input type="text" class="form-control form-control-sm custom-select-input motorista-subgrid-input" id="motorista-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${(isItemAgendado || isItemRecusado) ? 'disabled' : ''}>
                                 <div class="custom-select-dropdown" id="motorista-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                                 <div class="selected-item-details mt-1"></div>
                             </div>
                             <div class="form-group col-md-3 custom-select-container">
-                                <label for="caminhao-subgrid-input-${index}">Caminhão</label>
-                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${isItemAgendado ? 'disabled' : ''}>
+                                <label for="caminhao-subgrid-input-${index}">Caminh├úo</label>
+                                <input type="text" class="form-control form-control-sm custom-select-input caminhao-subgrid-input" id="caminhao-subgrid-input-${index}" placeholder="Selecione ou digite" data-id="" ${(isItemAgendado || isItemRecusado) ? 'disabled' : ''}>
                                 <div class="custom-select-dropdown" id="caminhao-subgrid-dropdown-${index}"><ul class="list-group list-group-flush custom-select-list"></ul></div>
                                 <div class="selected-item-details mt-1"></div>
                             </div>
                             <div class="form-group col-md-2">
                                 <label for="carga-solicitada-input-${index}">Carga Sol.</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton" ${isItemAgendado ? 'disabled' : ''}>
+                                <input type="number" step="0.01" class="form-control form-control-sm carga-solicitada-input" id="carga-solicitada-input-${index}" placeholder="Ton" ${(isItemAgendado || isItemRecusado) ? 'disabled' : ''}>
                             </div>
                             <div class="form-group col-md-2">
                                 <label>Status</label>
-                                <input type="text" class="form-control form-control-sm subgrid-status" value="${isItemAgendado ? 'Agendado!' : ''}" readonly>
+                                <input type="text" class="form-control form-control-sm subgrid-status" value="${isItemAgendado ? 'Agendado!' : (isItemRecusado ? 'Recusado' : '')}" readonly>
                             </div>
                             <div class="form-group col-md-1">
                                 <label>&nbsp;</label>
-                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid" ${isItemAgendado ? 'disabled' : ''}>
+                                <button type="button" class="btn btn-success btn-sm btn-block btn-agendar-subgrid" ${(isItemAgendado || isItemRecusado) ? 'disabled' : ''}>
                                     Agendar
                                 </button>
                             </div>
@@ -535,8 +548,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 ]);
 
                 if (fertiparResponse.status === 401) {
-                    showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
-                    lastReadStatus.innerHTML = '<span class="text-danger">Não autorizado.</span>';
+                    showAlert('Sess├úo expirada ou inv├ílida. Por favor, fa├ºa login novamente.', 'danger');
+                    lastReadStatus.innerHTML = '<span class="text-danger">N├úo autorizado.</span>';
                     populateFertiparTable([], agendasEmEspera); // Pass empty data, but still pass agendasEmEspera
                     return;
                 }
@@ -549,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         showAlert('Dados Fertipar lidos com sucesso!', 'success');
                     } else {
                         populateFertiparTable([], agendasEmEspera);
-                        showAlert(result.message || 'Não há dados de cotação disponíveis no momento.', 'info');
+                        showAlert(result.message || 'N├úo h├í dados de cota├º├úo dispon├¡veis no momento.', 'info');
                     }
                     localStorage.setItem(LAST_READ_KEY, new Date().toISOString());
                     updateLastReadStatus();
@@ -561,8 +574,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Erro ao ler dados Fertipar:', error);
                 populateFertiparTable([], []); // Pass empty arrays in case of connection error
-                showAlert('Erro de conexão ao tentar buscar os dados da Fertipar.', 'danger');
-                lastReadStatus.innerHTML = '<span class="text-danger">Falha na conexão.</span>';
+                showAlert('Erro de conex├úo ao tentar buscar os dados da Fertipar.', 'danger');
+                lastReadStatus.innerHTML = '<span class="text-danger">Falha na conex├úo.</span>';
             } finally {
                 btnLerDadosFertipar.disabled = false;
             }
@@ -572,27 +585,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fertiparModal) {
         $(fertiparModal).on('show.bs.modal', () => updateLastReadStatus());
         
-        // Listener para o novo botão de dados fictícios
+        // Listener para o novo bot├úo de dados fict├¡cios
         $('#btnDadosFicticios').on('click', async function() {
             const fictitiousData = [
-                { "Protocolo": "346562", "Pedido": "928580", "Data": "13/01/2026 10:21", "Situação": "APROVADO", "Destino": "BELA VISTA -MS", "Qtde.": "46.0", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "" },
-                { "Protocolo": "346512", "Pedido": "939686", "Data": "09/01/2026 16:32", "Situação": "APROVADO", "Destino": "COSTA RICA - MS", "Qtde.": "97.5", "Embalagem": "BIG-BAG", "Cotação": "290.0", "Observação Cotação": "MINIMO MOTO RODO 247,64" },
-                { "Protocolo": "346445", "Pedido": "928580", "Data": "07/01/2026 13:27", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "280.0", "Observação Cotação": "MINIMO MOTO RODO 256,47" },
-                { "Protocolo": "346443", "Pedido": "928580", "Data": "07/01/2026 14:08", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "70.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
-                { "Protocolo": "346442", "Pedido": "928580", "Data": "07/01/2026 14:10", "Situação": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "2.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO BITREM 301,49" },
-                { "Protocolo": "346419", "Pedido": "938069", "Data": "05/01/2026 11:52", "Situação": "APROVADO", "Destino": "PARAISO DAS AGUAS - MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cotação": "320.0", "Observação Cotação": "MINIMO MOTO RODO 228,45" },
-                { "Protocolo": "346405", "Pedido": "928580", "Data": "13/01/2026 13:05", "Situação": "APROVADO", "Destino": "ANASTACIO - MS", "Qtde.": "35.0", "Embalagem": "BIG-BAG", "Cotação": "335.0", "Observação Cotação": "MINIMO MOTO 300,0" },
-                { "Protocolo": "346387", "Pedido": "926074", "Data": "04/12/2025 16:10", "Situação": "APROVADO", "Destino": "ALCINOPOLIS - MS", "Qtde.": "49.0", "Embalagem": "BIG-BAG", "Cotação": "300.0", "Observação Cotação": "MINIMO MOTO RODO 279,88" },
-                { "Protocolo": "346215", "Pedido": "939421", "Data": "07/01/2026 10:21", "Situação": "APROVADO", "Destino": "ROSANA-SP", "Qtde.": "72.0", "Embalagem": "BIG-BAG", "Cotação": "240.0", "Observação Cotação": "MINIMO MOTO BITREM 185,30" },
-                { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situação": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cotação": "620.0", "Observação Cotação": "" }
+                { "Protocolo": "346562", "Pedido": "928580", "Data": "13/01/2026 10:21", "Situa├º├úo": "APROVADO", "Destino": "BELA VISTA -MS", "Qtde.": "46.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "290.0", "Observa├º├úo Cota├º├úo": "" },
+                { "Protocolo": "346512", "Pedido": "939686", "Data": "09/01/2026 16:32", "Situa├º├úo": "APROVADO", "Destino": "COSTA RICA - MS", "Qtde.": "97.5", "Embalagem": "BIG-BAG", "Cota├º├úo": "290.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO RODO 247,64" },
+                { "Protocolo": "346445", "Pedido": "928580", "Data": "07/01/2026 13:27", "Situa├º├úo": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "280.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO RODO 256,47" },
+                { "Protocolo": "346443", "Pedido": "928580", "Data": "07/01/2026 14:08", "Situa├º├úo": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "70.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "335.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346442", "Pedido": "928580", "Data": "07/01/2026 14:10", "Situa├º├úo": "APROVADO", "Destino": "BONITO-MS", "Qtde.": "2.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "335.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO BITREM 301,49" },
+                { "Protocolo": "346419", "Pedido": "938069", "Data": "05/01/2026 11:52", "Situa├º├úo": "APROVADO", "Destino": "PARAISO DAS AGUAS - MS", "Qtde.": "48.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "320.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO RODO 228,45" },
+                { "Protocolo": "346405", "Pedido": "928580", "Data": "13/01/2026 13:05", "Situa├º├úo": "APROVADO", "Destino": "ANASTACIO - MS", "Qtde.": "35.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "335.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO 300,0" },
+                { "Protocolo": "346387", "Pedido": "926074", "Data": "04/12/2025 16:10", "Situa├º├úo": "APROVADO", "Destino": "ALCINOPOLIS - MS", "Qtde.": "49.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "300.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO RODO 279,88" },
+                { "Protocolo": "346215", "Pedido": "939421", "Data": "07/01/2026 10:21", "Situa├º├úo": "APROVADO", "Destino": "ROSANA-SP", "Qtde.": "72.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "240.0", "Observa├º├úo Cota├º├úo": "MINIMO MOTO BITREM 185,30" },
+                { "Protocolo": "346203", "Pedido": "940277", "Data": "12/01/2026 18:30", "Situa├º├úo": "APROVADO", "Destino": "ESPIGAO DO OESTE - RO", "Qtde.": "16.0", "Embalagem": "BIG-BAG", "Cota├º├úo": "620.0", "Observa├º├úo Cota├º├úo": "" }
             ];
             
             const agendasEmEspera = await fetchAgendasProcessarData(); // Fetch agendas here
             populateFertiparTable(fictitiousData, agendasEmEspera);
-            toastr.info('Dados fictícios carregados na tabela.');
+            toastr.info('Dados fict├¡cios carregados na tabela.');
 
             if(lastReadStatus) {
-                lastReadStatus.innerHTML = '<span class="text-warning font-weight-bold">Exibindo dados fictícios.</span>';
+                lastReadStatus.innerHTML = '<span class="text-warning font-weight-bold">Exibindo dados fict├¡cios.</span>';
             }
             
             $('#fertiparDataTableBody input[type="checkbox"]').prop('disabled', false);
@@ -600,7 +613,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btnSaveFertipar) $(btnSaveFertipar).prop('disabled', false);
         });
 
-        // Lógica de filtragem
+        // L├│gica de filtragem
         $(fertiparModal).on('keyup', '.filter-input', function() {
             const columnIndex = $(this).parent().index(); 
             const filterValue = $(this).val().toLowerCase();
@@ -613,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (cellText.includes(filterValue)) {
                     row.show();
-                    // Não mexer no status do subgrid aqui para manter o estado (aberto/fechado)
+                    // N├úo mexer no status do subgrid aqui para manter o estado (aberto/fechado)
                 } else {
                     row.hide();
                     if(subgridRow.length > 0) {
@@ -625,9 +638,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-        // Listener para o botão Limpar Agendas
+        // Listener para o bot├úo Limpar Agendas
         $('#btnLimparAgendas').on('click', async function() {
-            if (!confirm('Tem certeza que deseja limpar TODOS os agendamentos em espera? Esta ação é irreversível.')) {
+            if (!confirm('Tem certeza que deseja limpar TODOS os agendamentos em espera? Esta a├º├úo ├® irrevers├¡vel.')) {
                 return;
             }
 
@@ -648,31 +661,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Erro ao limpar agendamentos:', error);
-                showAlert('Erro de conexão ao tentar limpar os agendamentos.', 'danger');
+                showAlert('Erro de conex├úo ao tentar limpar os agendamentos.', 'danger');
             }
         });
     }
 
     if (formGerarAgenda) {
         formGerarAgenda.addEventListener('submit', async function(event) {
-            event.preventDefault(); // Previne o refresh da página
+            event.preventDefault(); // Previne o refresh da p├ígina
 
             const pesoCarregarInput = document.getElementById('peso-carregar');
             const pesoCarregar = parseFloat(pesoCarregarInput.value);
 
             if (!pesoCarregar || pesoCarregar <= 0) {
-                // showAlert('O campo "Peso a Carregar" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
+                // showAlert('O campo "Peso a Carregar" ├® obrigat├│rio e deve ser maior que zero.', 'warning'); // Removido toast
                 pesoCarregarInput.focus();
                 return;
             }
 
-            // Coleta os dados do formulário
+            // Coleta os dados do formul├írio
             const motoristaId = hiddenMotoristaId.value;
             const caminhaoId = hiddenCaminhaoId.value;
             const fertiparItemJson = hiddenFertiparItemJson.value;
             
             if (!motoristaId || !caminhaoId || !fertiparItemJson) {
-                // showAlert('Por favor, selecione um motorista, um caminhão e um item Fertipar.', 'warning'); // Removido toast
+                // showAlert('Por favor, selecione um motorista, um caminh├úo e um item Fertipar.', 'warning'); // Removido toast
                 return;
             }
 
@@ -691,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (response.status === 401) {
-                    // showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger'); // Removido toast
+                    // showAlert('Sess├úo expirada ou inv├ílida. Por favor, fa├ºa login novamente.', 'danger'); // Removido toast
                     return;
                 }
 
@@ -706,12 +719,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     showAlert(`Executando RPA para Protocolo ${fertiparItem.Protocolo}...`, 'info', true);
-                    const rpaResult = await executeRpaTask(result.agenda); // Chama a função refatorada
+                    const rpaResult = await executeRpaTask(result.agenda); // Chama a fun├º├úo refatorada
 
                     if (rpaResult.success) {
                         showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
                     } else {
-                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execu├º├úo do RPA.';
                         showAlert(displayMessage, 'danger', true);
                     }
                     
@@ -725,13 +738,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Erro ao agendar:', error);
-                // Removido toast de erro de conexão para simplificar a UI
-                // showAlert('Erro de conexão ao agendar.', 'danger');
+                // Removido toast de erro de conex├úo para simplificar a UI
+                // showAlert('Erro de conex├úo ao agendar.', 'danger');
             }
         });
     }
 
-    // --- Lógica de Agendamento (Subgrid) ---
+    // --- L├│gica de Agendamento (Subgrid) ---
     async function startStatusMonitoring(protocolo, pedido) {
         showAlert(`Iniciando monitoramento de status para Protocolo ${protocolo}...`, 'info', true);
     
@@ -756,8 +769,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false; // Indicate failure
             }
         } catch (error) {
-            console.error('Erro de conexão durante o monitoramento de status:', error);
-            showAlert('Erro de conexão com o servidor durante o monitoramento. Verifique o console.', 'danger', true);
+            console.error('Erro de conex├úo durante o monitoramento de status:', error);
+            showAlert('Erro de conex├úo com o servidor durante o monitoramento. Verifique o console.', 'danger', true);
             updateTableRowStatus(protocolo, pedido, 'erro');
             return false; // Indicate failure
         }
@@ -776,13 +789,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const pedido = fertiparItem.Pedido;
 
         if (!motoristaId || !caminhaoId || !fertiparItem) {
-            // showAlert('Por favor, selecione um motorista e um caminhão para agendar.', 'warning'); // Removido toast
+            // showAlert('Por favor, selecione um motorista e um caminh├úo para agendar.', 'warning'); // Removido toast
             return;
         }
         
         const cargaSolicitadaFloat = parseFloat(cargaSolicitada);
         if (isNaN(cargaSolicitadaFloat) || cargaSolicitadaFloat <= 0) {
-            // showAlert('O campo "Carga Solicitada" é obrigatório e deve ser maior que zero.', 'warning'); // Removido toast
+            // showAlert('O campo "Carga Solicitada" ├® obrigat├│rio e deve ser maior que zero.', 'warning'); // Removido toast
             subgridContent.find('.carga-solicitada-input').focus();
             return;
         }
@@ -819,7 +832,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
                         updateTableRowStatus(protocolo, pedido, 'agendado');
                     } else {
-                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
+                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execu├º├úo do RPA.';
                         showAlert(displayMessage, 'danger', true);
                         updateTableRowStatus(protocolo, pedido, 'erro');
                     }
@@ -840,8 +853,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Erro ao agendar via subgrid:', error);
-            showAlert('Erro de conexão ao agendar. Verifique sua rede e o status do servidor.', 'danger');
-            statusInput.val('Falha na conexão');
+            showAlert('Erro de conex├úo ao agendar. Verifique sua rede e o status do servidor.', 'danger');
+            statusInput.val('Falha na conex├úo');
             updateTableRowStatus(protocolo, pedido, 'erro'); // Atualiza visualmente para erro
             button.disabled = false;
         }
@@ -849,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     if (fertiparDataTableBody) {
-        // Listener para o botão de agendamento do subgrid
+        // Listener para o bot├úo de agendamento do subgrid
         fertiparDataTableBody.addEventListener('click', function(event) {
             const agendarButton = event.target.closest('.btn-agendar-subgrid');
             if (agendarButton) {
@@ -857,7 +870,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Listener para validação do campo de carga solicitada
+        // Listener para valida├º├úo do campo de carga solicitada
         fertiparDataTableBody.addEventListener('input', function(event) {
             const cargaInput = event.target.closest('.carga-solicitada-input');
             if (cargaInput) {
@@ -867,7 +880,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cargaDigitada = parseFloat(cargaInput.value);
 
                 if (!isNaN(cargaDigitada) && !isNaN(qtdeDisponivel) && cargaDigitada > qtdeDisponivel) {
-                    toastr.warning(`A carga solicitada (${cargaDigitada} ton) não pode ser maior que a quantidade disponível (${qtdeDisponivel} ton).`, 'Valor Inválido');
+                    toastr.warning(`A carga solicitada (${cargaDigitada} ton) n├úo pode ser maior que a quantidade dispon├¡vel (${qtdeDisponivel} ton).`, 'Valor Inv├ílido');
                     cargaInput.value = qtdeDisponivel;
                 }
             }
@@ -899,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Nova função para exclusão de agenda ---
+    // --- Nova fun├º├úo para exclus├úo de agenda ---
     async function deleteAgenda(agendaId) {
         if (!confirm('Tem certeza que deseja cancelar esta agenda?')) {
             return;
@@ -912,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.status === 401) {
-                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                showAlert('Sess├úo expirada ou inv├ílida. Por favor, fa├ºa login novamente.', 'danger');
                 return;
             }
 
@@ -925,12 +938,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('Erro ao cancelar agenda: ' + (result.message || 'Erro desconhecido'), 'danger');
             }
         } catch (error) {
-            console.error('Erro de conexão ao cancelar agenda:', error);
-            showAlert('Erro de conexão ao cancelar agenda.', 'danger');
+            console.error('Erro de conex├úo ao cancelar agenda:', error);
+            showAlert('Erro de conex├úo ao cancelar agenda.', 'danger');
         }
     }
 
-    // --- Event listener para os botões de cancelar ---
+    // --- Event listener para os bot├Áes de cancelar ---
     if (agendasEmEsperaBody) {
         agendasEmEsperaBody.addEventListener('click', function(event) {
             const target = event.target.closest('.btn-cancelar-agenda');
@@ -943,23 +956,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Lógica para expandir/recolher subgrid no Modal Fertipar (jQuery version) ---
-    $('#fertiparDataTableBody').on('click', '.btn-toggle-subgrid', function() {
-        const $toggleButton = $(this);
-        const $mainRow = $toggleButton.closest('.fertipar-main-row');
-        const $subgridRow = $mainRow.next('.fertipar-subgrid-row');
+    // --- L├│gica para expandir/recolher subgrid no Modal Fertipar ---
+    $(document).on('click', '.btn-toggle-subgrid', function() {
+        const mainRow = $(this).closest('.fertipar-main-row');
+        const subgridRow = mainRow.next('.fertipar-subgrid-row');
 
-        if ($subgridRow.length) {
-            // Alterna a visibilidade da linha do subgrid
-            $subgridRow.toggle();
-            
-            // Alterna o ícone entre '+' e '-'
-            const $icon = $toggleButton.find('i');
-            $icon.toggleClass('fa-plus fa-minus');
+        if (subgridRow.length) {
+            subgridRow.toggle(); // Alterna a visibilidade do subgrid
+            const icon = $(this).find('i');
+            icon.toggleClass('fa-plus fa-minus'); // Alterna o ├¡cone
         }
     });
     
-    // --- Lógica de busca e renderização dos selects customizados ---
+    // --- L├│gica de busca e renderiza├º├úo dos selects customizados ---
     let cachedMotoristas = [];
     let cachedCaminhoes = [];
 
@@ -968,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return cachedMotoristas;
         }
         try {
-            const response = await fetch('/api/motoristas'); // Não requer autenticação
+            const response = await fetch('/api/motoristas'); // N├úo requer autentica├º├úo
             const data = await response.json();
             cachedMotoristas = data;
             return data;
@@ -983,12 +992,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return cachedCaminhoes;
         }
         try {
-            const response = await fetch('/api/caminhoes'); // Não requer autenticação
+            const response = await fetch('/api/caminhoes'); // N├úo requer autentica├º├úo
             const data = await response.json();
             cachedCaminhoes = data;
             return data;
         } catch (error) {
-            console.error('Erro ao buscar caminhões:', error);
+            console.error('Erro ao buscar caminh├Áes:', error);
             return [];
         }
     }
@@ -1106,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.status === 401) {
-                showAlert('Sessão expirada ou inválida. Por favor, faça login novamente.', 'danger');
+                showAlert('Sess├úo expirada ou inv├ílida. Por favor, fa├ºa login novamente.', 'danger');
                 return;
             }
 
@@ -1121,39 +1130,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 await loadAndRenderAgendas(); // Re-render to show error status
             }
         } catch (error) {
-            console.error('Erro de conexão ao executar agenda:', error);
-            showAlert('Erro de conexão ao executar agenda.', 'danger');
+            console.error('Erro de conex├úo ao executar agenda:', error);
+            showAlert('Erro de conex├úo ao executar agenda.', 'danger');
         }
     }
 
-    // --- Lógica de Polling para Atualização de Status ---
-    // A função 'pollForAgendaUpdates' será integrada diretamente na 'loadAndRenderAgendas'
-    // A função 'loadAndRenderAgendas' agora carrega as agendas com base nos filtros
+    // --- L├│gica de Polling para Atualiza├º├úo de Status ---
+    // A fun├º├úo 'pollForAgendaUpdates' ser├í integrada diretamente na 'loadAndRenderAgendas'
+    // A fun├º├úo 'loadAndRenderAgendas' agora carrega as agendas com base nos filtros
     async function loadAndRenderAgendas() {
         const selectedYear = selectAnoFiltro.value;
         const selectedMonth = selectMesFiltro.value;
         const agendas = await fetchAgendasData(selectedYear, selectedMonth); 
         await renderAgendas(agendas);
-        // lastKnownStatuses não é mais necessário com o refresh completo a cada poll.
+        // lastKnownStatuses n├úo ├® mais necess├írio com o refresh completo a cada poll.
     }
 
-    // 1. Configurar valores padrões para ano e mês
+    // 1. Configurar valores padr├úo para ano e m├¬s
     const today = new Date();
     selectAnoFiltro.value = today.getFullYear();
-    selectMesFiltro.value = today.getMonth() + 1; // getMonth() é 0-indexado
+    selectMesFiltro.value = today.getMonth() + 1; // getMonth() ├® 0-indexado
 
     // 2. Adicionar event listeners para os filtros
-    selectAnoFiltro.addEventListener('change', loadAndRenderAgendas);
-    selectMesFiltro.addEventListener('change', loadAndRenderAgendas);
+    if (selectAnoFiltro && selectMesFiltro) {
+        selectAnoFiltro.addEventListener('change', loadAndRenderAgendas);
+        selectMesFiltro.addEventListener('change', loadAndRenderAgendas);
 
-    // 3. Inicializar a carga e configurar o polling de 5 segundos
-    async function pollForAgendaUpdates() {
-        const selectedYear = selectAnoFiltro.value;
-        const selectedMonth = selectMesFiltro.value;
-        const agendas = await fetchAgendasData(selectedYear, selectedMonth);
-        await renderAgendas(agendas);
+        // 3. Inicializar a carga e configurar o polling de 5 segundos
+        async function pollForAgendaUpdates() {
+            const selectedYear = selectAnoFiltro.value;
+            const selectedMonth = selectMesFiltro.value;
+            const agendas = await fetchAgendasData(selectedYear, selectedMonth);
+            await renderAgendas(agendas);
+        }
+
+        loadAndRenderAgendas(); // Executa uma vez imediatamente
+        setInterval(pollForAgendaUpdates, 10000); // Executa a cada 10 segundos
     }
 
-    loadAndRenderAgendas(); // Executa uma vez imediatamente
-    setInterval(pollForAgendaUpdates, 10000); // Executa a cada 10 segundos
+    // L├│gica de Filtragem da Tabela de Agendas
+    function applyGridFilters() {
+        const filters = {};
+        $('#filter-row input').each(function() {
+            const colIndex = $(this).data('column');
+            const value = $(this).val().toLowerCase();
+            if (value) {
+                filters[colIndex] = value;
+            }
+        });
+
+        $('#agendas-em-espera-body tr').each(function() {
+            let rowVisible = true;
+            const row = $(this);
+            
+            for (const colIndex in filters) {
+                const cellText = row.find('td').eq(colIndex).text().toLowerCase();
+                if (!cellText.includes(filters[colIndex])) {
+                    rowVisible = false;
+                    break;
+                }
+            }
+            row.toggle(rowVisible);
+        });
+    }
+
+    // Adiciona o event listener para os campos de filtro
+    $(document).on('keyup', '#filter-row input', applyGridFilters);
 });
