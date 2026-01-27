@@ -117,8 +117,8 @@ async def scrape_fertipar_data(config=None):
             await browser.close()
     
     if scraped_data:
-        print(f"Raspagem concluída. Total de {len(scraped_data)} linhas. Filtrando por 'Situação' == 'PENDENTE'...")
-        filtered_data = [row for row in scraped_data if row.get('Situação') == 'PENDENTE']
+        print(f"Raspagem concluída. Total de {len(scraped_data)} linhas. Filtrando por 'Situação' == 'PENDENTE' ou 'APROVADO'...")
+        filtered_data = [row for row in scraped_data if row.get('Situação') in ['PENDENTE', 'APROVADO']]
         print(f"Encontrado {len(filtered_data)} linhas após filtro.")
         return filtered_data
 

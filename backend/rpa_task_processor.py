@@ -369,7 +369,13 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
         finally:
             # O navegador será fechado automaticamente ao finalizar a automação.
             if browser.is_connected():
-                print("Finalizando automação e fechando o navegador.")
-                await browser.close()
+                if run_headless_mode:
+                    print("Finalizando automação e fechando o navegador.")
+                    await browser.close()
+                else:
+                    print("Automação concluída. Pressione Enter no console para fechar o navegador...")
+                    loop = asyncio.get_running_loop()
+                    await loop.run_in_executor(None, input)
+                    await browser.close()
             else:
                 print("Automação finalizada. O navegador já foi desconectado.")
