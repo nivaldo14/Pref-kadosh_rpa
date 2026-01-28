@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime
 from playwright.async_api import async_playwright, Page, expect, TimeoutError
 import re
+import re
 
 # Helper function (no changes needed here)
 async def try_locate_and_screenshot(page_object, context_frame_or_page, locators_with_names, element_description):
@@ -119,10 +120,31 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             else:
                 print("[SUCESSO] Sessão ativa e na página correta. Prosseguindo sem login.")
             
-            # --- LÓGICA DA TABELA (a partir daqui o código original continua) ---
             print(f"Procurando pelo protocolo: {protocolo_procurado} e pedido: {pedido_procurado}...")
-            # Note: The grid expectation was already checked during session validation/login
+            
             linha_do_item = page.locator(f'//tr[contains(., "{protocolo_procurado}") and contains(., "{pedido_procurado}")]')
+            await expect(linha_do_item).to_be_visible(timeout=10000)
+
+            # --- LÓGICA DE VERIFICAÇÃO DE STATUS INTEGRADA ---
+            print("\n--- Verificando Status do Agendamento antes de prosseguir ---")
+            # A coluna 'Situação' é a 5ª (índice 4)
+            status_cell = linha_do_item.locator('td').nth(4)
+            status_text = (await status_cell.inner_text()).strip().upper()
+            print(f"[INFO] Status encontrado na página: '{status_text}'")
+
+            if "APROVADO" not in status_text:
+                message = f"O agendamento não pode prosseguir. Status atual: '{status_text}'."
+                print(f"[FALHA] {message}")
+                return {
+                    "success": False, 
+                    "status": "falhou", # Status unificado de falha
+                    "message": message, 
+                    "user_facing_message": message,
+                    "new_storage_state": new_storage_state
+                }
+            
+            print("[SUCESSO] Status 'APROVADO'. Prosseguindo com o agendamento...")
+            # --- FIM DA VERIFICAÇÃO ---
 
             if await linha_do_item.count() > 0:
                 print(f"Protocolo {protocolo_procurado} e Pedido {pedido_procurado} encontrados!")
@@ -336,12 +358,52 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     print("[MODO TESTE] O botão 'Salvar' foi identificado, mas não será clicado.")
                 else:
                     print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
-                    # Força o clique no botão 'Salvar' para garantir a execução, mesmo que haja elementos sobrepostos.
                     await salvar_button.click(force=True)
-                    print("[MODO PRODUCAO] O botão 'Salvar' foi clicado com sucesso.")
+                    # Espera um pouco para a página reagir e exibir a mensagem de sucesso ou erro.
+                    await page.wait_for_timeout(3000) 
+
+                    # Para depuração, salva o estado da página neste momento crítico
+                    await page.screenshot(path="post_save_check.png")
+                    
+                    # Verifica o conteúdo da página em busca da mensagem de erro
+                    page_content = await page.content()
+                    
+                    # Usamos regex para encontrar a mensagem de erro de forma flexível e case-insensitive
+                    match_indisponivel = re.search(r'Carga indisponivel para.*', page_content, re.IGNORECASE)
+                    match_sucesso = re.search(r'Agendamento realizado com sucesso', page_content, re.IGNORECASE)
+
+                    if match_indisponivel:
+                        # A mensagem de carga indisponível foi encontrada no HTML
+                        error_message = match_indisponivel.group(0).strip()
+                        # Remove tags HTML da mensagem para log limpo
+                        error_message = re.sub('<[^<]+?>', '', error_message) 
+                        print(f"[FALHA NO AGENDAMENTO] Mensagem de erro encontrada no HTML: '{error_message}'")
+                        return {
+                            "success": False,
+                            "status": "falhou",
+                            "message": error_message,
+                            "user_facing_message": error_message,
+                            "new_storage_state": new_storage_state
+                        }
+                    elif match_sucesso:
+                        # A mensagem de sucesso foi encontrada no HTML
+                        print("[SUCESSO] Agendamento realizado com sucesso detectado no conteúdo da página.")
+                        return {"success": True, "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
+                    else:
+                        # Nenhuma mensagem específica de falha ou sucesso encontrada. 
+                        # Isso pode indicar um problema ou um status intermediário.
+                        print("[AVISO] Status de agendamento indeterminado. Conteúdo da página após salvar (parcial):\n" + page_content[:1000] + "...") # Imprime um trecho para depuração
+                        return {
+                            "success": False,
+                            "status": "erro",
+                            "message": "Não foi possível determinar o status do agendamento após salvar. Verifique o screenshot e o log.",
+                            "user_facing_message": "Não foi possível determinar o status do agendamento. Verifique o log para detalhes.",
+                            "new_storage_state": new_storage_state
+                        }
 
                 # O navegador será fechado automaticamente ao finalizar a automação.
-                return {"success": True, "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
+                # Este retorno final só será alcançado se nenhuma das condições acima for atendida
+                # (o que não deve acontecer com a nova lógica).
             else:
                 message = f"Não há dados para pesquisar - motivo: sem agenda no site fertipar para Protocolo {protocolo_procurado} e Pedido {pedido_procurado}."
                 print(message)

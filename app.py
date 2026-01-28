@@ -16,7 +16,7 @@ import json
 basedir = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(basedir, 'backend'))
 
-from rpa_service import scrape_fertipar_data, monitor_agendamento_status
+from rpa_service import scrape_fertipar_data
 from rpa_task_processor import process_agendamento_main_task
 
 from datetime import datetime, timedelta, timezone
@@ -44,6 +44,9 @@ db_name = os.getenv('DB_NAME', 'dbkadosh')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}?client_encoding=utf8'
 print(f"DEBUG DB URI: {app.config['SQLALCHEMY_DATABASE_URI']}") # Added this line
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_recycle': 280,
+}
 
 APP_VERSION = datetime.now(timezone.utc).strftime("1.0.%y%m%d%H%M")
 
@@ -177,6 +180,7 @@ class Agenda(db.Model):
     fertipar_embalagem = db.Column(db.String(100), nullable=True)
     carga_solicitada = db.Column(db.Numeric(precision=10, scale=2), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='espera')
+    log_retorno = db.Column(db.Text, nullable=True)
     data_agendamento = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     motorista = db.relationship('Motorista', backref=db.backref('agendas', lazy=True))
@@ -220,6 +224,7 @@ class Agenda(db.Model):
             'pedido': self.fertipar_pedido,
             'destino': self.fertipar_destino,
             'status': self.status,
+            'log_retorno': self.log_retorno,
             'data_agendamento': self.data_agendamento.strftime('%d/%m/%Y %H:%M'),
             'carga_solicitada': float(self.carga_solicitada) if self.carga_solicitada else None
         }
@@ -950,65 +955,7 @@ def clear_agendas():
         db.session.rollback()
         return jsonify(success=False, message=f'Erro ao limpar agendamentos: {e}'), 500
 
-@app.route('/api/agendas/monitor_status', methods=['POST'])
-@dev_required # Or @login_required
-def monitor_status_task():
-    """
-    Triggers the RPA task to monitor an order's status.
-    """
-    data = request.get_json()
-    protocolo = data.get('protocolo')
-    pedido = data.get('pedido')
 
-    if not all([protocolo, pedido]):
-        return jsonify(success=False, message="Protocolo e Pedido são obrigatórios."), 400
-
-    config_db = db.session.query(ConfiguracaoRobo).first()
-    if not config_db:
-        return jsonify(success=False, message="Configuração do robô não encontrada."), 500
-        
-    sessao_rpa = db.session.query(RpaSessao).first()
-    storage_state = sessao_rpa.storage_state if sessao_rpa else None
-
-    # Structure params for the RPA function
-    rpa_config_params = {
-        "url_acesso": config_db.url_acesso,
-        "filial": config_db.filial,
-        "usuario_site": config_db.usuario_site,
-        "senha_site": config_db.senha_site,
-        "head_evento": config_db.head_evento,
-        "storage_state": storage_state
-    }
-    
-    try:
-        # Run the monitoring task
-        result = asyncio.run(monitor_agendamento_status(rpa_config_params, protocolo, pedido))
-
-        # Se o status for 'RECUSADO' ou 'ERRO', atualize o banco de dados
-        final_status = result.get('status')
-        if final_status and (final_status == 'RECUSADO' or final_status == 'ERRO'):
-            agenda_to_update = db.session.query(Agenda).filter_by(fertipar_protocolo=protocolo, fertipar_pedido=pedido).first()
-            if agenda_to_update:
-                agenda_to_update.status = final_status.lower()
-                db.session.commit()
-
-        # Save new session state if login happened
-        new_storage_state = result.get('new_storage_state')
-        if new_storage_state:
-            if sessao_rpa:
-                sessao_rpa.storage_state = new_storage_state
-                sessao_rpa.last_updated = datetime.now(timezone.utc)
-            else:
-                sessao_rpa = RpaSessao(storage_state=new_storage_state)
-                db.session.add(sessao_rpa)
-            db.session.commit()
-
-        return jsonify(result)
-
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify(success=False, status="ERRO", message=f"Erro interno do servidor ao monitorar status: {e}"), 500
-        
 @app.route('/api/agendas/execute/<int:agenda_id>', methods=['POST'])
 @dev_required
 def execute_agenda_task(agenda_id):
@@ -1113,13 +1060,19 @@ def execute_agenda_task(agenda_id):
 
         if result['success']:
             agenda.status = 'agendado'
-            # agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso.') # log_retorno não existe
+            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso.')
             db.session.commit()
             return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso.')))
         else:
-            agenda.status = 'erro'
+            # Verifica se há um status específico de falha retornado pelo RPA
+            specific_status = result.get('status')
+            if specific_status == 'falhou':
+                agenda.status = 'falhou'
+            else:
+                agenda.status = 'erro'
+            
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA.')
-            # agenda.log_retorno = log_content_for_db # log_retorno não existe
+            agenda.log_retorno = log_content_for_db
 
             try:
                 db.session.commit()
@@ -1127,7 +1080,7 @@ def execute_agenda_task(agenda_id):
                 db.session.rollback()
                 print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id}: {commit_e}")
                 try:
-                    # agenda.log_retorno = f"Original commit failed: {commit_e}" # log_retorno não existe
+                    agenda.log_retorno = f"Original commit failed: {commit_e}"
                     db.session.commit()
                 except Exception as final_e:
                     db.session.rollback()
@@ -1138,7 +1091,7 @@ def execute_agenda_task(agenda_id):
     except Exception as e:
         db.session.rollback()
         agenda.status = 'erro'
-        # agenda.log_retorno = f"Erro inesperado no servidor: {e}" # log_retorno não existe
+        agenda.log_retorno = f"Erro inesperado no servidor: {e}"
         db.session.commit()
         print(f"Erro ao executar automação para agenda {agenda_id}: {e}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô."), 500
@@ -1250,13 +1203,19 @@ def execute_agenda_task_dev_mode(agenda_id):
 
         if result['success']:
             agenda.status = 'agendado'
-            # agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso (Dev Mode).') # log_retorno não existe
+            agenda.log_retorno = result.get('message', 'Agendamento concluído com sucesso (Dev Mode).')
             db.session.commit()
             return jsonify(success=True, message=result.get('user_facing_message', result.get('message', 'Agendamento concluído com sucesso (Dev Mode).')))
         else:
-            agenda.status = 'erro (Dev)'
+            # Verifica se há um status específico de falha retornado pelo RPA
+            specific_status = result.get('status')
+            if specific_status == 'falhou':
+                agenda.status = 'falhou (Dev)'
+            else:
+                agenda.status = 'erro (Dev)'
+
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA (Dev Mode).')
-            # agenda.log_retorno = log_content_for_db # log_retorno não existe
+            agenda.log_retorno = log_content_for_db
             
             try:
                 db.session.commit()
@@ -1264,7 +1223,7 @@ def execute_agenda_task_dev_mode(agenda_id):
                 db.session.rollback()
                 print(f"ERROR app.py: db.session.commit() failed for agenda {agenda.id} (Dev Mode): {commit_e}")
                 try:
-                    # agenda.log_retorno = f"Original commit (Dev Mode) failed: {commit_e}" # log_retorno não existe
+                    agenda.log_retorno = f"Original commit (Dev Mode) failed: {commit_e}"
                     db.session.commit()
                 except Exception as final_e:
                     db.session.rollback()
@@ -1275,7 +1234,7 @@ def execute_agenda_task_dev_mode(agenda_id):
     except Exception as e:
         db.session.rollback()
         agenda.status = 'erro (Dev)'
-        # agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}" # log_retorno não existe
+        agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}"
         db.session.commit()
         print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô (Dev Mode)."), 500

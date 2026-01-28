@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Funções auxiliares para encontrar e atualizar o status visual da linha
-    function updateTableRowStatus(protocolo, pedido, newStatus) {
+    function updateTableRowStatus(protocolo, pedido, newStatus, logMessage = '') {
         // Encontra a linha principal usando o protocolo (e opcionalmente o pedido para maior especificidade)
         // Usamos um atributo de dados 'data-protocolo-pedido' para uma identificação única
         const rowIdentifier = `${protocolo}-${pedido}`;
@@ -102,19 +102,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Atualiza o texto do status no subgrid
         statusInput.val(newStatus);
+        if (logMessage) {
+            statusInput.attr('title', logMessage); // Adiciona a mensagem de erro como tooltip
+        }
 
         // Remove classes de status antigas
-        mainRow.removeClass('agendado-row status-changed-row erro-row recusado-row'); // Added erro-row and recusado-row
-        subgridRow.removeClass('agendado-row status-changed-row erro-row recusado-row'); // Added erro-row and recusado-row
+        mainRow.removeClass('agendado-row status-changed-row erro-row recusado-row falhou-row');
+        subgridRow.removeClass('agendado-row status-changed-row erro-row recusado-row falhou-row');
 
         // Adiciona a classe apropriada com base no novo status
         if (newStatus === 'espera') {
             mainRow.addClass('agendado-row'); // Agendado (verde)
             subgridRow.addClass('agendado-row');
-        } else if (newStatus === 'erro' || newStatus === 'erro (Dev)') { // Added condition for error
+        } else if (newStatus.toLowerCase().includes('erro')) {
             mainRow.addClass('erro-row');
             subgridRow.addClass('erro-row');
-        } else if (newStatus === 'recusado') { // Adicionada condição para 'recusado'
+        } else if (newStatus.toLowerCase().includes('falhou')) { // Novo status
+            mainRow.addClass('falhou-row'); // Classe para falha (pode usar o mesmo estilo de erro)
+            subgridRow.addClass('falhou-row');
+            statusInput.val('Falhou'); // Texto que o usuário vê
+        } else if (newStatus === 'recusado') {
             mainRow.addClass('recusado-row'); // Amarelo
             subgridRow.addClass('recusado-row');
         } else {
@@ -206,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (status === 'agendado') {
                 statusBadgeClass = 'badge-success';
-            } else if (status.includes('erro')) { 
+            } else if (status.includes('erro') || status.includes('falhou')) { 
                 statusBadgeClass = 'badge-danger';
                 rowClass = 'table-danger'; // Vermelho para a linha toda
             } else if (['processando', 'monitorando', 'aprovado_e_agendando'].some(s => status.includes(s))) {
@@ -817,34 +824,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const createResult = await createAgendaResponse.json();
 
             if (createResult.success) {
-                showAlert('Agenda criada no sistema, iniciando monitoramento no site externo...', 'info', true);
-                updateTableRowStatus(protocolo, pedido, 'monitorando'); // New visual status
-    
-                // **NEW LOGIC: Start the monitoring process**
-                const isApproved = await startStatusMonitoring(protocolo, pedido);
-    
-                if (isApproved) {
-                    // If approved, THEN execute the original RPA to schedule
-                    showAlert(`Status APROVADO. Executando agendamento final para Protocolo ${protocolo}...`, 'info', true);
-                    const rpaResult = await executeRpaTask(createResult.agenda); // executeRpaTask already exists
-    
-                    if (rpaResult.success) {
-                        showAlert(rpaResult.message || 'Comando RPA executado com sucesso!', 'success');
-                        updateTableRowStatus(protocolo, pedido, 'agendado');
-                    } else {
-                        const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Ocorreu um erro durante a execução do RPA.';
-                        showAlert(displayMessage, 'danger', true);
-                        updateTableRowStatus(protocolo, pedido, 'erro');
-                    }
-                    loadAndRenderAgendas();
-                    subgridContent.find('input, button').prop('disabled', true);
-    
+                showAlert('Agenda criada. Iniciando automação para verificação e agendamento...', 'info', true);
+                updateTableRowStatus(protocolo, pedido, 'processando');
+
+                // A chamada agora é direta para a automação unificada
+                const rpaResult = await executeRpaTask(createResult.agenda);
+
+                if (rpaResult.success) {
+                    showAlert(rpaResult.message || 'RPA executado com sucesso!', 'success');
+                    updateTableRowStatus(protocolo, pedido, 'agendado');
                 } else {
-                    // If not approved (rejected or error during monitoring), stop here.
-                    // The status has already been updated by startStatusMonitoring.
-                    button.disabled = false; // Maybe re-enable the button? Or keep it disabled.
+                    const displayMessage = rpaResult.user_facing_message || rpaResult.message || 'Erro na execução do RPA.';
+                    showAlert(displayMessage, 'danger', true);
+                    const finalStatus = rpaResult.status || 'erro';
+                    updateTableRowStatus(protocolo, pedido, finalStatus, displayMessage);
                 }
-    
+                
+                loadAndRenderAgendas(); // Atualiza a tabela principal
+                subgridContent.find('input, button').prop('disabled', true);
+
             } else {
                 showAlert(createResult.message || 'Erro ao criar agenda no sistema.', 'danger');
                 statusInput.val('Erro local!');
