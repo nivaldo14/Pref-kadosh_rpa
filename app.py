@@ -124,6 +124,12 @@ def dev_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def carregar_tipos_carroceria(caminho_arquivo: str) -> list[str]:
+    with open(caminho_arquivo, "r", encoding="utf-8") as f:
+        linhas = f.read().splitlines()
+    # remove linhas vazias e espaços extras
+    return [linha.strip() for linha in linhas if linha.strip()]
+
 
 
 # --- Database Models ---
@@ -477,6 +483,7 @@ def cadastros():
     # Data for dropdowns
     ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
     tipos_carroceria = ['Cavalo Mecânico', 'Cavalo Mecânico Trucado', 'Toco', 'Truck', 'Bitruck', 'Carreta 2 eixos', 'Carreta 3 eixos', 'Carreta Cavalo Trucado', 'Bitrem', 'Rodotrem']
+    #tipos_carroceria = carregar_tipos_carroceria("mds/tpcarroceria.md")
     
     # Determine active tab
     active_tab = request.args.get('tab', 'caminhoes')

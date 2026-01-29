@@ -6,6 +6,9 @@ from playwright.async_api import async_playwright, Page, expect, TimeoutError
 import re
 import re
 
+# Importar a função de monitoramento
+from rpa_service import monitor_agendamento_status
+
 # Helper function (no changes needed here)
 async def try_locate_and_screenshot(page_object, context_frame_or_page, locators_with_names, element_description):
     print(f"\n--- Tentando localizar: '{element_description}' ---")
@@ -28,6 +31,8 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
     """
     Processa um agendamento no site da Fertipar usando Playwright,
     recebendo todos os parâmetros em um único dicionário.
+    Primeiro, monitora o status do agendamento, depois prossegue com o preenchimento
+    e salvamento se o status for 'APROVADO'.
     """
     # --- Extrair dados do dicionário rpa_params ---
     config = rpa_params.get("config", {})
@@ -58,17 +63,14 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
     print(f"Iniciando automação para Protocolo: {protocolo_procurado}, Pedido: {pedido_procurado}, CPF: {nro_cpf}")
 
+    # --- Inicia o navegador para o processo de automação ---
     async with async_playwright() as playwright:
-        # Determina o modo headless com base na configuração 'head_evento' do JSON.
-        # head_evento: true (mostrar tela) -> headless=False
-        # head_evento: false (rodar em background) -> headless=True
         mostrar_tela = config.get('head_evento', False)
         run_headless_mode = not mostrar_tela
         
         print(f"Configuração 'head_evento' é {mostrar_tela}. Modo headless do navegador: {run_headless_mode}.")
 
         browser = await playwright.chromium.launch(headless=run_headless_mode, slow_mo=50, args=["--start-fullscreen"])
-        # Novo: Inicializa o contexto com o storage_state se ele existir
         context = await browser.new_context(storage_state=storage_state if storage_state else {})
         page = await context.new_page()
 
@@ -78,19 +80,15 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             print("--- Iniciando verificação de sessão e login condicional ---")
             cotacoes_url = "https://sisferweb.fertipar.com.br/logistica/paginas/cotacoesTransportadora/index.xhtml"
             
-            # Navegue para a página de cotações para verificar o estado da sessão
             await page.goto(cotacoes_url, timeout=60000) # Increased timeout for initial navigation
             
-            # Verifique se o elemento de login está visível. Se sim, a sessão é inválida.
             login_needed = False
             try:
-                # Usar um seletor que é único da página de login
                 await expect(page.locator("#filial_label")).to_be_visible(timeout=5000)
                 login_needed = True
                 print("[INFO] Elemento de login encontrado. Sessão inválida ou expirada.")
             except (TimeoutError, AssertionError):
                 print("[INFO] Elemento de login NÃO encontrado. Sessão provavelmente ativa.")
-                # Adicionalmente, verificar se a página de destino (dashboard) está correta
                 try:
                     await expect(page.get_by_role("grid").first).to_be_visible(timeout=5000)
                     print("[INFO] Grid do dashboard encontrado. Sessão ativa e na página correta.")
@@ -100,7 +98,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
             if login_needed:
                 print("[INFO] Realizando novo login...")
-                # --- ETAPA DE LOGIN COMPLETA (existente) ---
                 await page.goto(url_login, timeout=60000)
                 await page.locator("#filial_label").click()
                 await page.get_by_role("option", name=filial).click()
@@ -110,51 +107,53 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 await page.wait_for_load_state('networkidle', timeout=30000)
                 print("Login realizado com sucesso.")
 
-                # Após login, navegue e verifique novamente a página de cotações
                 await page.goto(cotacoes_url, timeout=30000)
                 await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
                 print("[SUCESSO] Navegação para 'Minhas Cotações' após novo login.")
 
-                # Capture o novo estado da sessão
                 new_storage_state = await context.storage_state()
             else:
                 print("[SUCESSO] Sessão ativa e na página correta. Prosseguindo sem login.")
             
-            print(f"Procurando pelo protocolo: {protocolo_procurado} e pedido: {pedido_procurado}...")
+            # --- CHAMA A FUNÇÃO DE MONITORAMENTO DE STATUS ---
+            # Onde `monitor_agendamento_status` é chamado.
+            print("\n--- Chamando monitor_agendamento_status para verificar o protocolo/pedido ---")
+            monitor_result = await monitor_agendamento_status(config={
+                "url_acesso": url_login,
+                "filial": filial,
+                "usuario_site": usuario_site,
+                "senha_site": senha_site,
+                "head_evento": mostrar_tela,
+                "tempo_espera_segundos": config.get("tempo_espera_segundos", 30)
+            }, protocolo=protocolo_procurado, pedido=pedido_procurado)
             
-            linha_do_item = page.locator(f'//tr[contains(., "{protocolo_procurado}") and contains(., "{pedido_procurado}")]')
-            await expect(linha_do_item).to_be_visible(timeout=10000)
+            # Propaga o new_storage_state de volta se o monitor_agendamento_status tiver feito login
+            if monitor_result.get('new_storage_state'):
+                new_storage_state = monitor_result['new_storage_state']
 
-            # --- LÓGICA DE VERIFICAÇÃO DE STATUS INTEGRADA ---
-            print("\n--- Verificando Status do Agendamento antes de prosseguir ---")
-            # A coluna 'Situação' é a 5ª (índice 4)
-            status_cell = linha_do_item.locator('td').nth(4)
-            status_text = (await status_cell.inner_text()).strip().upper()
-            print(f"[INFO] Status encontrado na página: '{status_text}'")
-
-            if "APROVADO" not in status_text:
-                message = f"O agendamento não pode prosseguir. Status atual: '{status_text}'."
-                print(f"[FALHA] {message}")
+            if monitor_result['status'] != "APROVADO":
+                # Se não está APROVADO, retorna o resultado do monitoramento diretamente
                 return {
-                    "success": False, 
-                    "status": "falhou", # Status unificado de falha
-                    "message": message, 
-                    "user_facing_message": message,
+                    "success": monitor_result['success'],
+                    "status": monitor_result['status'],
+                    "message": monitor_result['message'],
+                    "user_facing_message": monitor_result['message'], # Pode ser refinado
                     "new_storage_state": new_storage_state
                 }
-            
-            print("[SUCESSO] Status 'APROVADO'. Prosseguindo com o agendamento...")
-            # --- FIM DA VERIFICAÇÃO ---
 
-            if await linha_do_item.count() > 0:
-                print(f"Protocolo {protocolo_procurado} e Pedido {pedido_procurado} encontrados!")
+            print("[SUCESSO] Status 'APROVADO' detectado pelo monitoramento. Prosseguindo com o agendamento...")
+            # --- FIM DA VERIFICAÇÃO DE STATUS INTEGRADA ---
+
+            # O restante do fluxo de preenchimento do formulário e salvamento só ocorre se o status for APROVADO
+            if await page.locator(f'//tr[contains(., "{protocolo_procurado}") and contains(., "{pedido_procurado}")]').count() > 0:
+                print(f"Protocolo {protocolo_procurado} e Pedido {pedido_procurado} encontrados no grid após monitoramento!")
+                # Onde é feita a busca por pedido/protocolo após aprovação.
+                linha_do_item = page.locator(f'//tr[contains(., "{protocolo_procurado}") and contains(., "{pedido_procurado}")]')
                 botao_agendar = linha_do_item.locator(':text("Agendar Pedido")')
                 await botao_agendar.click()
                 
-                # --- LÓGICA DE PREENCHIMENTO DE FORMULÁRIO REFINADA COM VALIDAÇÕES ---
                 print("\n--- Iniciando preenchimento de dados do veículo e contato ---")
                 
-                # Preencher Contato
                 contato_val = config.get("contato")
                 if contato_val:
                     try:
@@ -165,7 +164,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Contato' vazio no JSON. Pulando.")
                 
-                # Preencher DDD e Telefone
                 telefone_completo = config.get("telefone")
                 if telefone_completo:
                     match = re.search(r'\((\d{2})\)\s*(.*)', telefone_completo)
@@ -183,7 +181,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Telefone' vazio no JSON. Pulando.")
                 
-                # Preencher Placa Principal
                 placa_principal = caminhao.get("placa")
                 if placa_principal:
                     try:
@@ -194,7 +191,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa' principal vazio no JSON. Pulando.")
 
-                # Selecionar UF da Placa (Dropdown)
                 uf_placa = caminhao.get("uf")
                 if uf_placa:
                     try:
@@ -206,7 +202,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'UF' da placa principal vazio no JSON. Pulando.")
 
-                # Selecionar Tipo de Carroceria (Dropdown)
                 tipo_carroceria = caminhao.get("tipo_carroceria")
                 if tipo_carroceria:
                     try:
@@ -218,7 +213,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Tipo de Carroceria' vazio no JSON. Pulando.")
                 
-                # Preencher Placa Reboque 1
                 placa_reboque1 = caminhao.get("placa_reboque1")
                 if placa_reboque1:
                     try:
@@ -229,7 +223,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 1' vazio no JSON. Pulando.")
                 
-                # Selecionar UF Reboque 1 (Dropdown)
                 uf1 = caminhao.get("uf1")
                 if uf1:
                     try:
@@ -241,7 +234,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'UF Reboque 1' vazio no JSON. Pulando.")
                 
-                # Preencher Placa Reboque 2
                 placa_reboque2 = caminhao.get("placa_reboque2")
                 if placa_reboque2:
                     try:
@@ -252,7 +244,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 2' vazio no JSON. Pulando.")
 
-                # Selecionar UF Reboque 2 (Dropdown)
                 uf2 = caminhao.get("uf2")
                 if uf2:
                     try:
@@ -264,7 +255,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'UF Reboque 2' vazio no JSON. Pulando.")
 
-                # Preencher Placa Reboque 3
                 placa_reboque3 = caminhao.get("placa_reboque3")
                 if placa_reboque3:
                     try:
@@ -275,7 +265,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 3' vazio no JSON. Pulando.")
 
-                # Selecionar UF Reboque 3 (Dropdown)
                 uf3 = caminhao.get("uf3")
                 if uf3:
                     try:
@@ -287,7 +276,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'UF Reboque 3' vazio no JSON. Pulando.")
                 
-                # Continuação do fluxo original...
                 element_to_click = page.locator("[id=\"form-minhas-cotacoes:j_idt126\"]")
                 await expect(element_to_click).to_be_visible(timeout=10000)
                 await element_to_click.click()
@@ -301,12 +289,10 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     page_object=page,
                     context_frame_or_page=iframe_content,
                     locators_with_names=[
-                        # Novas tentativas de localização mais robustas
                         (iframe_content.locator("input[id*='Cpf']"), "CSS: input[id*='Cpf'] (partial ID)"),
                         (iframe_content.locator("input[name*='Cpf']"), "CSS: input[name*='Cpf'] (partial name)"),
                         (iframe_content.locator("input[id*='cpf']"), "CSS: input[id*='cpf'] (partial ID lowercase)"),
                         (iframe_content.locator("input[name*='cpf']"), "CSS: input[name*='cpf'] (partial name lowercase)"),
-                        # Locators originais
                         (iframe_content.get_by_role("textbox", name="___.___.___-__"), "get_by_role(\"textbox\", name=\"___.___.___-__\")"),
                         (iframe_content.get_by_placeholder("Nro.Cpf"), "get_by_placeholder(\"Nro.Cpf\")")
                     ],
@@ -314,31 +300,24 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 )
                 await expect(campo_cpf_iframe).to_be_editable(timeout=10000)
                 
-                # Preenchendo o CPF lentamente
                 print(f"Preenchendo o campo CPF com: {nro_cpf}")
                 await campo_cpf_iframe.type(nro_cpf, delay=150) # Adiciona um delay de 150ms entre cada caractere
                 print("[SUCESSO] Campo CPF preenchido.")
 
-                # Clicar no botão 'Pesquisar'
                 botao_pesquisar_iframe = iframe_content.get_by_role("button", name=" Pesquisar")
                 await expect(botao_pesquisar_iframe).to_be_visible(timeout=5000)
                 await botao_pesquisar_iframe.click()
                 print("Botão 'Pesquisar' foi clicado após preencher o CPF.")
 
-                # Aguardar um momento para os resultados da pesquisa aparecerem
                 await page.wait_for_timeout(2000)
 
-                # --- LÓGICA CONDICIONAL: TENTAR 'SELECIONAR' E, SE FALHAR, TENTAR 'SIM' ---
                 try:
-                    # Tenta clicar em 'Selecionar' primeiro
                     print("Tentando clicar no botão 'Selecionar'...")
                     botao_selecionar = iframe_content.get_by_role("button", name=" Selecionar")
                     await expect(botao_selecionar).to_be_visible(timeout=7000) # Aumentar timeout para dar tempo da busca acontecer
                     await botao_selecionar.click()
                     print("[SUCESSO] Botão 'Selecionar' clicado.")
                 except TimeoutError:
-                    # Se 'Selecionar' não aparecer, pode ser que o motorista já esteja cadastrado
-                    # e o sistema pergunte diretamente para confirmar
                     print("[INFO] Botão 'Selecionar' não encontrado. Tentando alternativa 'Sim'...")
                     botao_sim = iframe_content.get_by_role("button", name=" Sim")
                     await expect(botao_sim).to_be_visible(timeout=5000)
@@ -347,7 +326,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
                 print("Automação de agendamento concluída com sucesso.")
 
-                # --- LÓGICA CONDICIONAL PARA SALVAR O AGENDAMENTO ---
                 modo_execucao = config.get("modo_execucao", "producao") # Default para 'producao' se não for especificado
 
                 salvar_button = page.get_by_role("button", name=" Salvar")
@@ -356,26 +334,21 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 if modo_execucao == "teste":
                     print("\n[MODO TESTE] EVENTO EM TESTE - NAO ESTA AGENDANDO!")
                     print("[MODO TESTE] O botão 'Salvar' foi identificado, mas não será clicado.")
+                    return {"success": True, "message": "Modo de teste: Agendamento não salvo.", "new_storage_state": new_storage_state}
                 else:
                     print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
                     await salvar_button.click(force=True)
-                    # Espera um pouco para a página reagir e exibir a mensagem de sucesso ou erro.
                     await page.wait_for_timeout(3000) 
 
-                    # Para depuração, salva o estado da página neste momento crítico
                     await page.screenshot(path="post_save_check.png")
                     
-                    # Verifica o conteúdo da página em busca da mensagem de erro
                     page_content = await page.content()
                     
-                    # Usamos regex para encontrar a mensagem de erro de forma flexível e case-insensitive
                     match_indisponivel = re.search(r'Carga indisponivel para.*', page_content, re.IGNORECASE)
                     match_sucesso = re.search(r'Agendamento realizado com sucesso', page_content, re.IGNORECASE)
 
                     if match_indisponivel:
-                        # A mensagem de carga indisponível foi encontrada no HTML
                         error_message = match_indisponivel.group(0).strip()
-                        # Remove tags HTML da mensagem para log limpo
                         error_message = re.sub('<[^<]+?>', '', error_message) 
                         print(f"[FALHA NO AGENDAMENTO] Mensagem de erro encontrada no HTML: '{error_message}'")
                         return {
@@ -386,12 +359,9 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                             "new_storage_state": new_storage_state
                         }
                     elif match_sucesso:
-                        # A mensagem de sucesso foi encontrada no HTML
                         print("[SUCESSO] Agendamento realizado com sucesso detectado no conteúdo da página.")
-                        return {"success": True, "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
+                        return {"success": True, "status": "agendado", "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
                     else:
-                        # Nenhuma mensagem específica de falha ou sucesso encontrada. 
-                        # Isso pode indicar um problema ou um status intermediário.
                         print("[AVISO] Status de agendamento indeterminado. Conteúdo da página após salvar (parcial):\n" + page_content[:1000] + "...") # Imprime um trecho para depuração
                         return {
                             "success": False,
@@ -400,14 +370,10 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                             "user_facing_message": "Não foi possível determinar o status do agendamento. Verifique o log para detalhes.",
                             "new_storage_state": new_storage_state
                         }
-
-                # O navegador será fechado automaticamente ao finalizar a automação.
-                # Este retorno final só será alcançado se nenhuma das condições acima for atendida
-                # (o que não deve acontecer com a nova lógica).
             else:
-                message = f"Não há dados para pesquisar - motivo: sem agenda no site fertipar para Protocolo {protocolo_procurado} e Pedido {pedido_procurado}."
+                message = f"Não foi possível localizar o protocolo {protocolo_procurado} e pedido {pedido_procurado} no grid para iniciar o agendamento, mesmo após o monitoramento inicial ter sinalizado 'APROVADO'."
                 print(message)
-                return {"success": False, "message": message, "new_storage_state": new_storage_state}
+                return {"success": False, "status": "erro", "message": message, "new_storage_state": new_storage_state}
 
         except Exception as e:
             tb_str = traceback.format_exc()
@@ -415,7 +381,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             error_log_message += f"\nErro inesperado: {e}\n"
             error_log_message += f"Traceback:\n{tb_str}\n"
             
-            # Imprime o erro detalhado no console do Flask
             print(error_log_message)
             
             user_facing_message = "Ocorreu um erro durante a automação. Verifique o console para mais detalhes."
@@ -424,12 +389,9 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             elif isinstance(e, TimeoutError):
                  user_facing_message = "A automação excedeu o tempo de espera por um elemento na página."
 
-            # Em caso de erro, o navegador será fechado automaticamente.
-
-            return {"success": False, "message": tb_str, "user_facing_message": user_facing_message, "new_storage_state": new_storage_state}
+            return {"success": False, "status": "erro", "message": tb_str, "user_facing_message": user_facing_message, "new_storage_state": new_storage_state}
 
         finally:
-            # O navegador será fechado automaticamente ao finalizar a automação.
             if browser.is_connected():
                 if run_headless_mode:
                     print("Finalizando automação e fechando o navegador.")
