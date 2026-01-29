@@ -107,7 +107,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 await page.wait_for_load_state('networkidle', timeout=30000)
                 print("Login realizado com sucesso.")
 
-                await page.goto(cotacoes_url, timeout=30000)
+                await page.goto(cotacoes_url, timeout=10000)
                 await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
                 print("[SUCESSO] Navegação para 'Minhas Cotações' após novo login.")
 
@@ -116,29 +116,25 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 print("[SUCESSO] Sessão ativa e na página correta. Prosseguindo sem login.")
             
             # --- CHAMA A FUNÇÃO DE MONITORAMENTO DE STATUS ---
-            # Onde `monitor_agendamento_status` é chamado.
+            # Onde `monitor_agendamento_status` é chamado, agora passando o objeto 'page' existente.
             print("\n--- Chamando monitor_agendamento_status para verificar o protocolo/pedido ---")
-            monitor_result = await monitor_agendamento_status(config={
-                "url_acesso": url_login,
-                "filial": filial,
-                "usuario_site": usuario_site,
-                "senha_site": senha_site,
-                "head_evento": mostrar_tela,
-                "tempo_espera_segundos": config.get("tempo_espera_segundos", 30)
-            }, protocolo=protocolo_procurado, pedido=pedido_procurado)
+            monitor_result = await monitor_agendamento_status(
+                page=page, 
+                config={"tempo_espera_segundos": config.get("tempo_espera_segundos", 30)},
+                protocolo=protocolo_procurado, 
+                pedido=pedido_procurado
+            )
             
-            # Propaga o new_storage_state de volta se o monitor_agendamento_status tiver feito login
-            if monitor_result.get('new_storage_state'):
-                new_storage_state = monitor_result['new_storage_state']
+            # A sessão (new_storage_state) é gerenciada apenas nesta função, não mais no monitor.
 
-            if monitor_result['status'] != "APROVADO":
+            if monitor_result.get('status') != "APROVADO":
                 # Se não está APROVADO, retorna o resultado do monitoramento diretamente
                 return {
-                    "success": monitor_result['success'],
-                    "status": monitor_result['status'],
-                    "message": monitor_result['message'],
-                    "user_facing_message": monitor_result['message'], # Pode ser refinado
-                    "new_storage_state": new_storage_state
+                    "success": monitor_result.get('success', False),
+                    "status": monitor_result.get('status', 'erro'),
+                    "message": monitor_result.get('message', 'Erro desconhecido no monitoramento.'),
+                    "user_facing_message": monitor_result.get('message', 'O monitoramento falhou.'),
+                    "new_storage_state": new_storage_state # Propaga o estado de sessão se houver
                 }
 
             print("[SUCESSO] Status 'APROVADO' detectado pelo monitoramento. Prosseguindo com o agendamento...")
@@ -154,6 +150,15 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 
                 print("\n--- Iniciando preenchimento de dados do veículo e contato ---")
                 
+                cargaSolicitada_val=config.get("carga_solicitada")
+                if cargaSolicitada_val:
+                    try:
+                        await page.get_by_role("textbox", name="Quantidade*").fill(cargaSolicitada_val)
+                        print(f"[SUCESSO] Campo 'Carga Solicitada*' preenchido com: {cargaSolicitada_val}")
+                    except TimeoutError:
+                        print(f"[FALHA] Campo 'Carga Solicitada*' não encontrado ou não editável. Valor: {cargaSolicitada_val}")
+
+
                 contato_val = config.get("contato")
                 if contato_val:
                     try:
@@ -184,8 +189,17 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 placa_principal = caminhao.get("placa")
                 if placa_principal:
                     try:
-                        await page.get_by_role("textbox", name="Placa*").fill(placa_principal)
-                        print(f"[SUCESSO] Campo 'Placa*' preenchido com: {placa_principal}")
+                        placa_input = page.get_by_role("textbox", name="Placa*")
+                        # await page.get_by_role("textbox", name="Placa*").click()
+                        # await page.get_by_role("textbox", name="Placa*").fill(placa_principal)
+                         
+                        await placa_input.click()
+                        await placa_input.fill(placa_principal)     
+                        
+                        valor = await placa_input.input_value()
+                        print(f"[DEBUG] Valor no campo Placa*: {valor!r}")
+     
+                        print(f"[SUCESSO] Campo ** 'Placa*' preenchido com: {placa_principal}")
                     except TimeoutError:
                         print(f"[FALHA] Campo 'Placa*' não encontrado ou não editável. Valor: {placa_principal}")
                 else:

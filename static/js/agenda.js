@@ -227,6 +227,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusBadgeClass = 'badge-primary';
             }
 
+            let statusDisplay = `<span class="badge ${statusBadgeClass}">${(agenda.status || '').toUpperCase()}</span>`;
+            if (status.includes('processando')) {
+                statusDisplay = `<span class="badge ${statusBadgeClass}">${(agenda.status || '').toUpperCase()} <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>`;
+            }
+
+            // Adiciona o ícone de tooltip se houver log_retorno
+            if (agenda.log_retorno) {
+                // Escapa o conteúdo de log_retorno para evitar problemas de HTML
+                const sanitizedLog = new Option(agenda.log_retorno).innerHTML;
+                statusDisplay += ` <i class="fas fa-question-circle" title="${sanitizedLog}" data-toggle="tooltip"></i>`;
+            }
+
             // Formata as informações do caminhão
             let caminhaoDisplay = agenda.caminhao.placa || 'N/A';
             if (agenda.caminhao.tipo_carroceria) {
@@ -245,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${agenda.pedido}</td>
                 <td>${agenda.destino}</td>
                 <td>${agenda.carga_solicitada !== null ? agenda.carga_solicitada : 'N/A'}</td>
-                <td><span class="badge ${statusBadgeClass}">${(agenda.status || '').toUpperCase()}</span></td>
+                <td>${statusDisplay}</td>
                 <td>
                     <button class="btn btn-sm btn-info btn-executar-agenda" title="Executar" data-id="${agenda.id}" ${status !== 'espera' ? 'disabled' : ''}><i class="fas fa-play"></i></button>
                     <button class="btn btn-sm btn-danger btn-cancelar-agenda" title="Cancelar" data-id="${agenda.id}" ${status !== 'espera' ? 'disabled' : ''}><i class="fas fa-times"></i></button>

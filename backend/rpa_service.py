@@ -4,116 +4,70 @@ from playwright.async_api import async_playwright, Page, expect, TimeoutError
 import re
 import time # Importar módulo time para o timeout do loop
 import traceback
+from datetime import datetime # Importar datetime para a verificação de horário
 
-async def monitor_agendamento_status(config: dict, protocolo: str, pedido: str) -> dict:
+async def monitor_agendamento_status(page: Page, config: dict, protocolo: str, pedido: str) -> dict:
     """
-    Monitors the status of a specific order on the Fertipar website until it is
-    'APROVADO' or another final status (e.g., 'CANCELADO', 'RECUSADO').
-    Includes a timeout for the monitoring loop.
+    Monitors the status of a specific order on the Fertipar website using an existing Page object.
+    Includes a timeout for the monitoring loop and a hard stop at 17:30.
     """
     if not config:
         raise ValueError("Configuration object is required.")
+    if not page:
+        raise ValueError("A Playwright Page object is required.")
 
-    url_login = config.get("url_acesso")
-    filial = config.get("filial")
-    usuario_site = config.get("usuario_site")
-    senha_site = config.get("senha_site")
-    storage_state = config.get("storage_state")
-
-    # Define o tempo limite para o loop de monitoramento (2 horas)
     start_time = time.time()
-    # TODO(monitor_agendamento_status): O limite de 2 horas será o tempo_espera_segundos que virá do banco de dados (ConfiguracaoRobo)
-    # Por enquanto, mantido como 2 horas (7200 segundos) para fins de implementação inicial.
-    timeout_seconds = 7200 
+    timeout_seconds = 7200  # 2 horas
 
-    async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=not config.get('head_evento', False), slow_mo=50)
-        context = await browser.new_context(storage_state=storage_state)
-        page = await context.new_page()
+    try:
+        # A página já deve estar logada e na URL correta, vinda do process_agendamento_main_task
+        print("[MONITOR] Iniciando monitoramento na página existente.")
 
-        new_storage_state = None
+        # --- Monitoring Loop ---
+        while True:
+            # 1. Verificar timeout do loop
+            if time.time() - start_time > timeout_seconds:
+                message = f"Timeout de {timeout_seconds/3600} horas atingido. O status para Protocolo {protocolo} não mudou de 'PENDENTE'."
+                print(f"[MONITOR] {message}")
+                return {"success": False, "status": "Falha", "message": message}
 
-        try:
-            # --- Login Logic (copied and adapted from rpa_task_processor) ---
-            cotacoes_url = "https://sisferweb.fertipar.com.br/logistica/paginas/cotacoesTransportadora/index.xhtml"
-            await page.goto(cotacoes_url, timeout=60000)
+            # 2. Verificar horário limite de 17:30
+            now = datetime.now()
+            if now.hour > 17 or (now.hour == 17 and now.minute >= 30):
+                message = 'Site indisponivel! horario fechado o acesso'
+                print(f"[MONITOR] {message}")
+                return {"success": False, "status": "indisponivel", "message": message}
 
-            login_needed = False
-            try:
-                await expect(page.locator("#filial_label")).to_be_visible(timeout=5000)
-                login_needed = True
-            except (TimeoutError, AssertionError):
-                # If login form is not there, check if the main grid is.
-                try:
-                    await expect(page.get_by_role("grid").first).to_be_visible(timeout=5000)
-                except TimeoutError:
-                    login_needed = True # Not on login page, but not on dashboard either. Force login.
+            print(f"[MONITOR] Checando status para Protocolo: {protocolo}, Pedido: {pedido}")
+            
+            # 3. Buscar por pedido/protocolo no grid
+            linha_do_item = page.locator(f'//tr[contains(., "{protocolo}") and contains(., "{pedido}")]')
 
-            if login_needed:
-                print("[MONITOR] Performing new login...")
-                await page.goto(url_login, timeout=60000)
-                await page.locator("#filial_label").click()
-                await page.get_by_role("option", name=filial).click()
-                await page.get_by_role("textbox", name="Usuário").fill(usuario_site)
-                await page.get_by_role("textbox", name="Senha").fill(senha_site)
-                await page.get_by_role("button", name=" Acessar").click()
-                await page.wait_for_load_state('networkidle', timeout=30000)
-                new_storage_state = await context.storage_state()
-                await page.goto(cotacoes_url, timeout=30000)
-                await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
+            if await linha_do_item.count() > 0:
+                status_text = (await linha_do_item.locator('td').nth(4).inner_text()).strip().upper()
+                print(f"[MONITOR] Status encontrado: '{status_text}'")
 
-            # --- Monitoring Loop ---
-            # TODO(monitor_agendamento_status): Adicionar um contador de tentativas ou usar um tempo de espera mais dinâmico.
-            while True:
-                # 1. Verificar timeout do loop
-                if time.time() - start_time > timeout_seconds:
-                    message = f"Timeout de {timeout_seconds/3600} horas atingido. O status de agendamento para Protocolo {protocolo}, Pedido {pedido} não mudou de 'PENDENTE'."
-                    print(f"[MONITOR] {message}")
-                    return {"success": False, "status": "Falha", "message": message, "new_storage_state": new_storage_state}
-
-                print(f"[MONITOR] Checking status for Protocolo: {protocolo}, Pedido: {pedido}")
-                
-                # 2. Buscar por pedido/protocolo no grid
-                # Onde é feita a busca por pedido/protocolo
-                linha_do_item = page.locator(f'//tr[contains(., "{protocolo}") and contains(., "{pedido}")]') # Adicionado " and contains(., "{pedido}")" para busca mais precisa.
-
-                if await linha_do_item.count() > 0:
-                    # Encontra o texto da coluna de status (assumindo 5ª coluna, índice 4)
-                    status_text = (await linha_do_item.locator('td').nth(4).inner_text()).strip().upper()
-                    print(f"[MONITOR] Found status: '{status_text}'")
-
-                    # 3. Lógica de controle de status
-                    if "APROVADO" in status_text:
-                        # Onde o banco seria atualizado para APROVADO (chamador deve fazer)
-                        return {"success": True, "status": "APROVADO", "message": "Agendamento aprovado.", "new_storage_state": new_storage_state}
-                    elif "PENDENTE" in status_text:
-                        print("[MONITOR] Status 'PENDENTE'. Recarregando a página e aguardando...")
-                        # Onde ocorre o reload
-                        await asyncio.sleep(config.get('tempo_espera_segundos', 30)) # Espera configurável antes de recarregar
-                        await page.reload(wait_until="networkidle")
-                        continue # Continua o loop para verificar novamente
-                    else:
-                        # Se encontrar situação diferente de "PENDENTE" e "APROVADO"
-                        # Exemplo: "CANCELADO", "RECUSADO", "INDEFERIDO" ou qualquer outro texto.
-                        message = f"Agendamento com status inesperado: '{status_text}'. Não será processado."
-                        print(f"[MONITOR] {message}")
-                        # Onde o banco seria atualizado para Falha (chamador deve fazer)
-                        return {"success": False, "status": "Falha", "message": message, "new_storage_state": new_storage_state}
-                else:
-                    print(f"[MONITOR] Row for Protocolo {protocolo}, Pedido {pedido} not found yet. Refreshing...")
-                    # Onde ocorre o reload (quando o item não é encontrado)
-                    await asyncio.sleep(config.get('tempo_espera_segundos', 30)) # Espera configurável antes de recarregar
+                if "APROVADO" in status_text:
+                    return {"success": True, "status": "APROVADO", "message": "Agendamento aprovado."}
+                elif "PENDENTE" in status_text:
+                    print("[MONITOR] Status 'PENDENTE'. Aguardando e recarregando a página...")
+                    await asyncio.sleep(config.get('tempo_espera_segundos', 30))
                     await page.reload(wait_until="networkidle")
-                    # TODO(monitor_agendamento_status): Considerar adicionar um limite de tentativas para 'item not found'.
-                    
-        except Exception as e:
-            tb_str = traceback.format_exc()
-            print(f"[MONITOR] Erro inesperado durante o monitoramento: {e}\n{tb_str}")
-            # Onde o banco seria atualizado para erro (chamador deve fazer)
-            return {"success": False, "status": "erro", "message": tb_str, "new_storage_state": new_storage_state}
-        finally:
-            if browser.is_connected():
-                await browser.close()
+                    continue
+                else:
+                    message = f"Agendamento com status final inesperado: '{status_text}'. O processo será interrompido."
+                    print(f"[MONITOR] {message}")
+                    return {"success": False, "status": "Falha", "message": message}
+            else:
+                print(f"[MONITOR] Protocolo {protocolo} não encontrado. Aguardando e recarregando...")
+                await asyncio.sleep(config.get('tempo_espera_segundos', 30))
+                await page.reload(wait_until="networkidle")
+                
+    except Exception as e:
+        tb_str = traceback.format_exc()
+        print(f"[MONITOR] Erro inesperado: {e}\n{tb_str}")
+        return {"success": False, "status": "erro", "message": tb_str}
+
 
 async def scrape_fertipar_data(config=None):
     """
@@ -233,7 +187,9 @@ async def scrape_fertipar_data(config=None):
         # Filtra apenas por 'PENDENTE' para o propósito de inicialização/exibição
         # A lógica de monitoramento e aprovação é feita em monitor_agendamento_status
         print(f"Raspagem concluída. Total de {len(scraped_data)} linhas. Filtrando por 'Situação' == 'PENDENTE'...")
-        filtered_data = [row for row in scraped_data if row.get('Situação') and row.get('Situação').strip().upper() == 'PENDENTE']
+        #filtered_data = [row for row in scraped_data if row.get('Situação') and row.get('Situação').strip().upper() == 'PENDENTE']
+        filtered_data = [row for row in scraped_data  if row.get('Situação') and row.get('Situação').strip().upper() in ('PENDENTE', 'APROVADO')
+]
         print(f"Encontrado {len(filtered_data)} linhas após filtro.")
         return filtered_data
 

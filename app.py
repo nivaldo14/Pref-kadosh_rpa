@@ -482,7 +482,7 @@ def cadastros():
     
     # Data for dropdowns
     ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
-    tipos_carroceria = ['Cavalo Mecânico', 'Cavalo Mecânico Trucado', 'Toco', 'Truck', 'Bitruck', 'Carreta 2 eixos', 'Carreta 3 eixos', 'Carreta Cavalo Trucado', 'Bitrem', 'Rodotrem']
+    tipos_carroceria = ['Cavalo Mecânico','Graneleiro','Cavalo Mecânico Trucado', 'Toco', 'Truck', 'Bitruck', 'Carreta 2 eixos', 'Carreta 3 eixos', 'Carreta Cavalo Trucado', 'Bitrem', 'Rodotrem']
     #tipos_carroceria = carregar_tipos_carroceria("mds/tpcarroceria.md")
     
     # Determine active tab
@@ -985,6 +985,14 @@ def execute_agenda_task(agenda_id):
     if not motorista or not caminhao:
         return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
 
+    # --- Verificação de Horário Limite (17:30) ---
+    now = datetime.now()
+    if now.hour > 17 or (now.hour == 17 and now.minute >= 30):
+        agenda.status = 'indisponivel'
+        agenda.log_retorno = 'Site indisponivel! horario fechado o acesso'
+        db.session.commit()
+        return jsonify(success=False, message=agenda.log_retorno), 403 # 403 Forbidden
+
     # --- LÓGICA DE SESSÃO: Carregar estado do banco de dados ---
     print("--- Carregando estado de sessão do RPA do banco de dados... ---")
     sessao_rpa = db.session.query(RpaSessao).first()
@@ -1126,6 +1134,14 @@ def execute_agenda_task_dev_mode(agenda_id):
     caminhao = db.session.get(Caminhao, agenda.caminhao_id)
     if not motorista or not caminhao:
         return jsonify(success=False, message="Motorista ou Caminhão da agenda não encontrados."), 404
+
+    # --- Verificação de Horário Limite (17:30) ---
+    now = datetime.now()
+    if now.hour > 17 or (now.hour == 17 and now.minute >= 30):
+        agenda.status = 'indisponivel'
+        agenda.log_retorno = 'Site indisponivel! horario fechado o acesso'
+        db.session.commit()
+        return jsonify(success=False, message=agenda.log_retorno), 403 # 403 Forbidden
 
     # --- LÓGICA DE SESSÃO: Carregar estado do banco de dados ---
     print("--- Carregando estado de sessão do RPA do banco de dados (Dev Mode)... ---")
