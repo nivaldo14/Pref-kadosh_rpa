@@ -2,9 +2,14 @@ import time
 import traceback
 import asyncio
 from datetime import datetime
-from playwright.async_api import async_playwright, Page, expect, TimeoutError
+from playwright.async_api import async_playwright, Page, expect, TimeoutError as PlaywrightTimeoutError
 import re
-import re
+
+from datetime import datetime
+import os
+
+
+#import re
 
 # Importar a função de monitoramento
 from rpa_service import monitor_agendamento_status
@@ -80,7 +85,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             print("--- Iniciando verificação de sessão e login condicional ---")
             cotacoes_url = "https://sisferweb.fertipar.com.br/logistica/paginas/cotacoesTransportadora/index.xhtml"
             
-            await page.goto(cotacoes_url, timeout=60000) # Increased timeout for initial navigation
+            await page.goto(cotacoes_url, timeout=120000) # Increased timeout for initial navigation
             
             login_needed = False
             try:
@@ -98,7 +103,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
             if login_needed:
                 print("[INFO] Realizando novo login...")
-                await page.goto(url_login, timeout=60000)
+                await page.goto(url_login, timeout=120000)
                 await page.locator("#filial_label").click()
                 await page.get_by_role("option", name=filial).click()
                 await page.get_by_role("textbox", name="Usuário").fill(usuario_site)
@@ -107,8 +112,8 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 await page.wait_for_load_state('networkidle', timeout=30000)
                 print("Login realizado com sucesso.")
 
-                await page.goto(cotacoes_url, timeout=10000)
-                await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
+                await page.goto(cotacoes_url, timeout=120000)
+                await expect(page.get_by_role("grid").first).to_be_visible(timeout=60000)
                 print("[SUCESSO] Navegação para 'Minhas Cotações' após novo login.")
 
                 new_storage_state = await context.storage_state()
@@ -150,7 +155,11 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 
                 print("\n--- Iniciando preenchimento de dados do veículo e contato ---")
                 
-                cargaSolicitada_val=config.get("carga_solicitada")
+                #cargaSolicitada_val=config.get("carga_solicitada")
+                cargaSolicitada_val=agenda_item.get("carga_solicitada")
+                cargaSolicitada_val = "" if cargaSolicitada_val is None else f"{float(cargaSolicitada_val):.2f}".replace(".", ",")
+                print(f"[a preencher****] Campo 'Carga Solicitada*' preenchido com: {cargaSolicitada_val}")
+                      
                 if cargaSolicitada_val:
                     try:
                         await page.get_by_role("textbox", name="Quantidade*").fill(cargaSolicitada_val)
@@ -353,37 +362,88 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
                     await salvar_button.click(force=True)
                     await page.wait_for_timeout(3000) 
+                    #if scpe
+                    #erro_locator = page.locator("css=div.alert-danger")
+                    erro_locator = page.locator(".ui-messages-error-icon")
+                    os.makedirs("erro_screenimg", exist_ok=True)
+                    agora = datetime.now()
+                    nome_arquivo = (
+                        f"pt{protocolo_procurado}_pd{pedido_procurado}_"
+                        f"{agora.hour:02d}{agora.minute:02d}.png"
+                     )
+                    caminho = os.path.join("erro_screenimg", nome_arquivo)
 
-                    await page.screenshot(path="post_save_check.png")
-                    
-                    page_content = await page.content()
-                    
-                    match_indisponivel = re.search(r'Carga indisponivel para.*', page_content, re.IGNORECASE)
-                    match_sucesso = re.search(r'Agendamento realizado com sucesso', page_content, re.IGNORECASE)
-
-                    if match_indisponivel:
-                        error_message = match_indisponivel.group(0).strip()
-                        error_message = re.sub('<[^<]+?>', '', error_message) 
-                        print(f"[FALHA NO AGENDAMENTO] Mensagem de erro encontrada no HTML: '{error_message}'")
-                        return {
-                            "success": False,
-                            "status": "falhou",
-                            "message": error_message,
-                            "user_facing_message": error_message,
-                            "new_storage_state": new_storage_state
-                        }
-                    elif match_sucesso:
-                        print("[SUCESSO] Agendamento realizado com sucesso detectado no conteúdo da página.")
-                        return {"success": True, "status": "agendado", "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
-                    else:
+                    try:
+                        # espera até 5s para ver se aparece alguma mensagem de erro
+                        await erro_locator.wait_for(state="visible", timeout=5000)
+                        texto_erro = (await erro_locator.inner_text()).strip()
+                        print(f"[RPA] Salvar FALHOU. Mensagem: {texto_erro}")
+                        #return {"status": "erro", "mensagem": texto_erro}
+                        page_content = await page.content()
                         print("[AVISO] Status de agendamento indeterminado. Conteúdo da página após salvar (parcial):\n" + page_content[:1000] + "...") # Imprime um trecho para depuração
+                        
+                        #nivaldo
+                        #await page.screenshot(path="post_save_check.png")
+                        # os.makedirs("erro_screenimg", exist_ok=True)
+                        # agora = datetime.now()
+                        # nome_arquivo = (
+                        #     f"pt{protocolo_procurado}_pd{pedido_procurado}_"
+                        #     f"{agora.hour:02d}{agora.minute:02d}.png"
+                        # )
+    
+                        # caminho = os.path.join("erro_screenimg", nome_arquivo)
+
+                        await page.screenshot(path=caminho)
+                       
+                        # pedido_procurado
                         return {
                             "success": False,
                             "status": "erro",
                             "message": "Não foi possível determinar o status do agendamento após salvar. Verifique o screenshot e o log.",
                             "user_facing_message": "Não foi possível determinar o status do agendamento. Verifique o log para detalhes.",
-                            "new_storage_state": new_storage_state
+                            "new_storage_state": new_storage_state,
+                            "cam_erro_img": caminho
                         }
+                    except PlaywrightTimeoutError:
+                        # não apareceu alerta vermelho, segue como sucesso
+                        print("[RPA] Salvar OK, nenhum alerta de erro visível.")
+                        #return {"status": "ok"}
+                        return {"success": True, "status": "agendado", "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state,"cam_erro_img": caminho}
+                
+                    # print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
+                    # await salvar_button.click(force=True)
+                    # await page.wait_for_timeout(3000) 
+
+                    # await page.screenshot(path="post_save_check.png")
+                    
+                    # page_content = await page.content()
+                    
+                    # match_indisponivel = re.search(r'Carga indisponivel para.*', page_content, re.IGNORECASE)
+                    # match_sucesso = re.search(r'Agendamento realizado com sucesso', page_content, re.IGNORECASE)
+
+                    # if match_indisponivel:
+                    #     error_message = match_indisponivel.group(0).strip()
+                    #     error_message = re.sub('<[^<]+?>', '', error_message) 
+                    #     print(f"[FALHA NO AGENDAMENTO] Mensagem de erro encontrada no HTML: '{error_message}'")
+                    #     return {
+                    #         "success": False,
+                    #         "status": "falhou",
+                    #         "message": error_message,
+                    #         "user_facing_message": error_message,
+                    #         "new_storage_state": new_storage_state
+                    #     }
+                    # elif match_sucesso:
+                    #     print("[SUCESSO] Agendamento realizado com sucesso detectado no conteúdo da página.")
+                    #     return {"success": True, "status": "agendado", "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state}
+                    # else:
+                    #     print("[AVISO] Status de agendamento indeterminado. Conteúdo da página após salvar (parcial):\n" + page_content[:1000] + "...") # Imprime um trecho para depuração
+                    #     return {
+                    #         "success": False,
+                    #         "status": "erro",
+                    #         "message": "Não foi possível determinar o status do agendamento após salvar. Verifique o screenshot e o log.",
+                    #         "user_facing_message": "Não foi possível determinar o status do agendamento. Verifique o log para detalhes.",
+                    #         "new_storage_state": new_storage_state
+                    #     }
             else:
                 message = f"Não foi possível localizar o protocolo {protocolo_procurado} e pedido {pedido_procurado} no grid para iniciar o agendamento, mesmo após o monitoramento inicial ter sinalizado 'APROVADO'."
                 print(message)
@@ -411,9 +471,13 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     print("Finalizando automação e fechando o navegador.")
                     await browser.close()
                 else:
-                    print("Automação concluída. Pressione Enter no console para fechar o navegador...")
-                    loop = asyncio.get_running_loop()
-                    await loop.run_in_executor(None, input)
+                    print("Automação concluída. Aguardando 10 segundos para fechar o navegador...")
+                    await asyncio.sleep(10)
                     await browser.close()
+
+                    # print("Automação concluída. Pressione Enter no console para fechar o navegador...")
+                    # loop = asyncio.get_running_loop()
+                    # await loop.run_in_executor(None, input)
+                    # await browser.close()
             else:
                 print("Automação finalizada. O navegador já foi desconectado.")

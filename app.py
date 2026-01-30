@@ -187,6 +187,7 @@ class Agenda(db.Model):
     carga_solicitada = db.Column(db.Numeric(precision=10, scale=2), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='espera')
     log_retorno = db.Column(db.Text, nullable=True)
+    cam_erro_img = db.Column(db.String(255), nullable=True)
     data_agendamento = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     motorista = db.relationship('Motorista', backref=db.backref('agendas', lazy=True))
@@ -231,6 +232,7 @@ class Agenda(db.Model):
             'destino': self.fertipar_destino,
             'status': self.status,
             'log_retorno': self.log_retorno,
+            'cam_erro_img': self.cam_erro_img, # <-- LINHA ADICIONADA
             'data_agendamento': self.data_agendamento.strftime('%d/%m/%Y %H:%M'),
             'carga_solicitada': float(self.carga_solicitada) if self.carga_solicitada else None
         }
@@ -1089,6 +1091,10 @@ def execute_agenda_task(agenda_id):
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA.')
             agenda.log_retorno = log_content_for_db
 
+            cam_erro_img_path = result.get('cam_erro_img')
+            if cam_erro_img_path:
+                agenda.cam_erro_img = cam_erro_img_path
+
             try:
                 db.session.commit()
             except Exception as commit_e:
@@ -1240,6 +1246,10 @@ def execute_agenda_task_dev_mode(agenda_id):
             log_content_for_db = result.get('message', 'Erro desconhecido durante a execução do RPA (Dev Mode).')
             agenda.log_retorno = log_content_for_db
             
+            cam_erro_img_path = result.get('cam_erro_img')
+            if cam_erro_img_path:
+                agenda.cam_erro_img = cam_erro_img_path
+            
             try:
                 db.session.commit()
             except Exception as commit_e:
@@ -1261,6 +1271,15 @@ def execute_agenda_task_dev_mode(agenda_id):
         db.session.commit()
         print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô (Dev Mode)."), 500
+
+
+@app.route('/erro_screenimg/<path:filename>')
+@login_required
+def serve_error_screenshot(filename):
+    """Serve as imagens de erro do diretório 'erro_screenimg'."""
+    from flask import send_from_directory
+    # Garante que o caminho é seguro e aponta para o diretório correto
+    return send_from_directory(os.path.join(basedir, 'erro_screenimg'), filename)
 
 
 

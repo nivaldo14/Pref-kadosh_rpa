@@ -236,7 +236,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (agenda.log_retorno) {
                 // Escapa o conteúdo de log_retorno para evitar problemas de HTML
                 const sanitizedLog = new Option(agenda.log_retorno).innerHTML;
-                statusDisplay += ` <i class="fas fa-question-circle" title="${sanitizedLog}" data-toggle="tooltip"></i>`;
+                const camErroImg = agenda.cam_erro_img || ''; // Pega o caminho da imagem ou string vazia
+                statusDisplay = `
+                    <button type="button" class="btn btn-sm btn-link btn-show-log" 
+                            data-log="${sanitizedLog}" 
+                            data-img-src="${camErroImg}" 
+                            data-toggle="modal" 
+                            data-target="#statusDetailModal">
+                        ${statusDisplay} <i class="fas fa-info-circle ml-1"></i>
+                    </button>`;
             }
 
             // Formata as informações do caminhão
@@ -417,6 +425,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. Lógica do Modal Fertipar
     function updateLastReadStatus() {
+        // Adiciona uma guarda robusta para garantir que a função só execute
+        // se todos os elementos do modal Fertipar estiverem presentes na página.
+        if (!fertiparModal || !lastReadStatus || !fertiparDataTableBody) {
+            return;
+        }
+
         const lastRead = localStorage.getItem(LAST_READ_KEY);
         let needsUpdate = false;
 
@@ -1206,4 +1220,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adiciona o event listener para os campos de filtro
     $(document).on('keyup', '#filter-row input', applyGridFilters);
+
+    // --- Listener para o Modal de Log ---
+    $('#statusDetailModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget); // Botão que acionou o modal
+        const logContent = button.data('log');
+        const imgSrc = button.data('img-src');
+
+        const modal = $(this);
+        modal.find('#log-content').val(logContent);
+
+        const screenshotImage = modal.find('#screenshot-image');
+        const placeholder = modal.find('#screenshot-placeholder');
+
+        if (imgSrc) {
+            // Usa um truque para tratar caminhos com barras invertidas e remove a barra inicial
+            const correctedImgSrc = imgSrc.replace(/\\/g, '/');
+            console.log('Caminho da imagem para o SRC:', correctedImgSrc); // <-- DEBUG
+            screenshotImage.attr('src', correctedImgSrc);
+            screenshotImage.show();
+            placeholder.hide();
+        } else {
+            screenshotImage.hide();
+            placeholder.show();
+        }
+    });
 });
