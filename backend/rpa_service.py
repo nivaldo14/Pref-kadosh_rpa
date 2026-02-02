@@ -187,9 +187,8 @@ async def scrape_fertipar_data(config=None):
         # Filtra apenas por 'PENDENTE' para o propósito de inicialização/exibição
         # A lógica de monitoramento e aprovação é feita em monitor_agendamento_status
         print(f"Raspagem concluída. Total de {len(scraped_data)} linhas. Filtrando por 'Situação' == 'PENDENTE'...")
-        #filtered_data = [row for row in scraped_data if row.get('Situação') and row.get('Situação').strip().upper() == 'PENDENTE']
-        filtered_data = [row for row in scraped_data  if row.get('Situação') and row.get('Situação').strip().upper() in ('PENDENTE', 'APROVADO')
-]
+        filtered_data = [row for row in scraped_data if row.get('Situação') and row.get('Situação').strip().upper() == 'PENDENTE']
+        #filtered_data = [row for row in scraped_data  if row.get('Situação') and row.get('Situação').strip().upper() in ('PENDENTE', 'APROVADO')]
         print(f"Encontrado {len(filtered_data)} linhas após filtro.")
         return filtered_data
 

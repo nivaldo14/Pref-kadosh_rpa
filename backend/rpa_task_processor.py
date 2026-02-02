@@ -112,8 +112,12 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 await page.wait_for_load_state('networkidle', timeout=30000)
                 print("Login realizado com sucesso.")
 
-                await page.goto(cotacoes_url, timeout=120000)
-                await expect(page.get_by_role("grid").first).to_be_visible(timeout=60000)
+                # await page.goto(cotacoes_url, timeout=120000)
+                # await expect(page.get_by_role("grid").first).to_be_visible(timeout=60000)
+                await page.goto(cotacoes_url, timeout=30000)
+                await expect(page.get_by_role("grid").first).to_be_visible(timeout=10000)
+
+
                 print("[SUCESSO] Navegação para 'Minhas Cotações' após novo login.")
 
                 new_storage_state = await context.storage_state()
@@ -305,7 +309,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
 
                 print("\nProcurando pelo iframe 'Cadastro de Motorista Autônomo'...")
                 iframe_motorista = page.locator("iframe[title=\"Cadastro de Motorista Autônomo\"]")
-                await expect(iframe_motorista).to_be_visible(timeout=15000)
+                await expect(iframe_motorista).to_be_visible(timeout=10000)
                 iframe_content = iframe_motorista.content_frame
 
                 campo_cpf_iframe = await try_locate_and_screenshot(
@@ -324,7 +328,8 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 await expect(campo_cpf_iframe).to_be_editable(timeout=10000)
                 
                 print(f"Preenchendo o campo CPF com: {nro_cpf}")
-                await campo_cpf_iframe.type(nro_cpf, delay=150) # Adiciona um delay de 150ms entre cada caractere
+                #await campo_cpf_iframe.type(nro_cpf, delay=150) # Adiciona um delay de 150ms entre cada caractere
+                await campo_cpf_iframe.type(nro_cpf, delay=100) # Adiciona um delay de 150ms entre cada caractere
                 print("[SUCESSO] Campo CPF preenchido.")
 
                 botao_pesquisar_iframe = iframe_content.get_by_role("button", name=" Pesquisar")
