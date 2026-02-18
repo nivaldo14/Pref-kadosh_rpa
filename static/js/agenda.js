@@ -72,7 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
             toastr.options.timeOut = 0; // Fica visível até ser fechado
             type = 'warning'; // Usa o tipo 'aviso' (amarelo)
         } else if (type === 'danger') {
-            toastr.options.timeOut = 0; // Erros reais também ficam visíveis
+            //toastr.options.timeOut = 0; // Erros reais também ficam visíveis
+            toastr.options.timeOut = 10000;      // 10 segundos
+            toastr.options.extendedTimeOut = 2000;
+
         } else if (isFixed) {
             toastr.options.timeOut = 0; // Fixed toast
             toastr.options.extendedTimeOut = 0;
@@ -188,7 +191,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar agendas:', error);
-            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+
+            showAlert('[agenda.js]-Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+        //     showAlert(
+        //             '[agenda.js]-Falha ao carregar agendas. Verifique sua conexão ou autenticação.',
+        //             'danger',
+        //             'main-alert' // por exemplo, um id extra
+        //             );
+            
+            
+        //   setTimeout(() => {
+        //         const alertElem = document.getElementById('main-alert');
+        //         if (alertElem) {
+        //             alertElem.remove(); // ou alertElem.style.display = 'none';
+        //         }
+        //         }, 10_000);
+                        
+                        
             return [];
         }
     }

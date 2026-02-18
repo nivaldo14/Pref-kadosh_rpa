@@ -17,7 +17,8 @@ async def monitor_agendamento_status(page: Page, config: dict, protocolo: str, p
         raise ValueError("A Playwright Page object is required.")
 
     start_time = time.time()
-    timeout_seconds = 7200  # 2 horas
+    #timeout_seconds = 7200  # 2 horas
+    timeout_seconds = 28800  # 8 horas
 
     try:
         # A página já deve estar logada e na URL correta, vinda do process_agendamento_main_task
@@ -50,8 +51,8 @@ async def monitor_agendamento_status(page: Page, config: dict, protocolo: str, p
                 if "APROVADO" in status_text:
                     return {"success": True, "status": "APROVADO", "message": "Agendamento aprovado."}
                 elif "PENDENTE" in status_text:
-                    print("[MONITOR] Status 'PENDENTE'. Aguardando e recarregando a página...")
-                    await asyncio.sleep(config.get('tempo_espera_segundos', 30))
+                    print("[MONITOR] Status 'PENDENTE'. Aguardando e recarregando a página... 1 segundo")
+                    await asyncio.sleep(config.get('tempo_espera_segundos', 1))
                     await page.reload(wait_until="networkidle")
                     continue
                 else:

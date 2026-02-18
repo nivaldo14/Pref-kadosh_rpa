@@ -19,10 +19,10 @@
     <!-- Seção de Caminhões -->
     <div class="tab-pane fade {% if active_tab == 'caminhoes' %}show active{% endif %}" id="caminhoes" role="tabpanel" aria-labelledby="caminhoes-tab">
         <div class="card mt-4">
-            <div class="card-header"><h3 class="card-title mb-0">Adicionar Novo Caminhão</h3></div>
+            <div class="card-header"><h3 class="card-title mb-0" id="caminhao-form-title">Adicionar Novo Caminhão</h3></div>
             <div class="card-body">
-                <form action="{{ url_for('add_caminhao') }}" method="post">
-                    
+                <form id="form-add-caminhao" action="{{ url_for('add_caminhao') }}" method="post">
+                    <input type="hidden" id="edit-caminhao-id" name="caminhao_id">
                     <div class="form-row">
                         <div class="form-group col-md-3"><label>Placa</label><input type="text" name="placa" class="form-control form-control-sm" required></div>
                         <div class="form-group col-md-3"><label>UF</label><select name="uf" class="form-control form-control-sm" required><option value="">Selecione...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
@@ -37,7 +37,8 @@
                         <div class="form-group col-md-2"><label>Placa Reboque 3</label><input type="text" name="placa_reboque3" class="form-control form-control-sm"></div>
                         <div class="form-group col-md-1"><label>UF 3</label><select name="uf3" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
                     </div>
-                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i>Adicionar</button>
+                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i><span class="btn-text">Adicionar</span></button>
+                    <button type="button" class="btn btn-secondary mt-3" id="btn-cancel-edit-caminhao" style="display: none;"><i class="fas fa-times mr-2"></i>Cancelar Edição</button>
                 </form>
             </div>
         </div>
@@ -45,10 +46,19 @@
             <div class="card-header"><h3 class="card-title mb-0">Caminhões Cadastrados</h3></div>
             <div class="card-body"><div class="table-responsive"><table class="table table-striped table-sm">
                 <thead><tr><th>Placa</th><th>UF</th><th>Carroceria</th><th>Reboque 1</th><th>Reboque 2</th><th>Reboque 3</th><th>Ações</th></tr></thead>
-                <tbody>
+                <tbody id="caminhoes-table-body">
                     {% for caminhao in caminhoes %}
-                    <tr><td>{{ caminhao.placa }}</td><td>{{ caminhao.uf }}</td><td>{{ caminhao.tipo_carroceria }}</td><td>{{ caminhao.placa_reboque1 or '' }}</td><td>{{ caminhao.placa_reboque2 or '' }}</td><td>{{ caminhao.placa_reboque3 or '' }}</td>
-                        <td><a href="{{ url_for('edit_caminhao', id=caminhao.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a> <a href="{{ url_for('delete_caminhao', id=caminhao.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
+                    <tr id="caminhao-row-{{ caminhao.id }}">
+                        <td>{{ caminhao.placa }}</td>
+                        <td>{{ caminhao.uf }}</td>
+                        <td>{{ caminhao.tipo_carroceria }}</td>
+                        <td>{{ caminhao.placa_reboque1 or '' }}</td>
+                        <td>{{ caminhao.placa_reboque2 or '' }}</td>
+                        <td>{{ caminhao.placa_reboque3 or '' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary btn-edit-caminhao" data-id="{{ caminhao.id }}"><i class="fas fa-edit"></i></button>
+                            <a href="{{ url_for('delete_caminhao', id=caminhao.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -59,9 +69,10 @@
     <!-- Seção de Motoristas -->
     <div class="tab-pane fade {% if active_tab == 'motoristas' %}show active{% endif %}" id="motoristas" role="tabpanel" aria-labelledby="motoristas-tab">
          <div class="card mt-4">
-            <div class="card-header"><h3 class="card-title mb-0">Adicionar Novo Motorista</h3></div>
+            <div class="card-header"><h3 class="card-title mb-0" id="motorista-form-title">Adicionar Novo Motorista</h3></div>
             <div class="card-body">
-                <form action="{{ url_for('add_motorista') }}" method="post">
+                <form id="form-add-motorista" action="{{ url_for('add_motorista') }}" method="post">
+                    <input type="hidden" id="edit-motorista-id" name="motorista_id">
                     <div class="form-row">
                         <div class="form-group col-md-4"><label>Nome Completo</label><input type="text" name="nome" class="form-control form-control-sm" required></div>
                         <div class="form-group col-md-2"><label>CPF</label><input type="text" name="cpf" id="motorista-cpf" class="form-control form-control-sm" required></div>
@@ -72,7 +83,8 @@
                         <div class="form-group col-md-2"><label>Cidade</label><input type="text" name="cidade" class="form-control form-control-sm"></div>
                         <div class="form-group col-md-1"><label>UF</label><select name="uf" class="form-control form-control-sm"><option value="">...</option>{% for uf in ufs %}<option value="{{ uf }}" {% if uf == 'PR' %}selected{% endif %}>{{ uf }}</option>{% endfor %}</select></div>
                     </div>
-                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i>Adicionar</button>
+                    <button type="submit" class="btn btn-success mt-3"><i class="fas fa-plus mr-2"></i><span class="btn-text">Adicionar</span></button>
+                    <button type="button" class="btn btn-secondary mt-3" id="btn-cancel-edit-motorista" style="display: none;"><i class="fas fa-times mr-2"></i>Cancelar Edição</button>
                 </form>
             </div>
         </div>
@@ -80,10 +92,18 @@
             <div class="card-header"><h3 class="card-title mb-0">Motoristas Cadastrados</h3></div>
             <div class="card-body"><table class="table table-striped table-sm">
                 <thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>Cidade</th><th>UF</th><th>Ações</th></tr></thead>
-                <tbody>
+                <tbody id="motoristas-table-body">
                     {% for motorista in motoristas %}
-                    <tr><td>{{ motorista.nome }}</td><td>{{ motorista.cpf }}</td><td>{{ motorista.telefone or '' }}</td><td>{{ motorista.cidade or '' }}</td><td>{{ motorista.uf or '' }}</td>
-                        <td><a href="{{ url_for('edit_motorista', id=motorista.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a> <a href="{{ url_for('delete_motorista', id=motorista.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>
+                    <tr id="motorista-row-{{ motorista.id }}">
+                        <td>{{ motorista.nome }}</td>
+                        <td>{{ motorista.cpf }}</td>
+                        <td>{{ motorista.telefone or '' }}</td>
+                        <td>{{ motorista.cidade or '' }}</td>
+                        <td>{{ motorista.uf or '' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary btn-edit-motorista" data-id="{{ motorista.id }}"><i class="fas fa-edit"></i></button>
+                            <a href="{{ url_for('delete_motorista', id=motorista.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -196,7 +216,7 @@
                         </select>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#fertiparModal"><i class="fas fa-file-alt mr-2"></i>Dados Fertipar</button>
-                    <button type="button" class="btn btn-success btn-sm ml-2" id="btnAgendarTodos">
+                    <button type="button" class="btn btn-success btn-sm ml-2" id="btnAgendarTodos" style="display:none">
                         <i class="fas fa-play mr-2"></i>Agendar Todos
                     </button>
                 </div>
@@ -317,7 +337,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-        <button type="button" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-primary" style="display:none">Salvar</button>
       </div>
     </div>
   </div>
@@ -360,76 +380,223 @@
 
 
 {% block scripts %}
-{{ super() }}
 <script>
-    const jwtTokenFromFlask = "{{ jwt_token or '' }}";
-    if (jwtTokenFromFlask) {
-        localStorage.setItem('jwt_token', jwtTokenFromFlask);
-        console.log('Token JWT salvo no localStorage.');
-    } else {
-        console.warn('Token JWT do Flask não encontrado na renderização da página.');
+    toastr.options.timeOut = 10000; // Define o tempo limite para 10 segundos (10000ms)
+</script>
+{{ super() }}
+<script src="{{ url_for('static', filename='js/masks.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- GERAL ---
+    if (typeof setupMasks === 'function') setupMasks();
+
+    // --- FUNÇÃO DE SUBMIT GENÉRICA ---
+    async function handleGenericSubmit(form, url, callback, isEditing) {
+        const button = form.querySelector('button[type="submit"]');
+        if (button.disabled) return;
+        
+        const btnTextSpan = button.querySelector('.btn-text');
+        const originalBtnText = btnTextSpan.textContent;
+        
+        button.disabled = true;
+        btnTextSpan.textContent = 'Salvando...';
+        button.insertAdjacentHTML('afterbegin', '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ');
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(url, { method: 'POST', body: new URLSearchParams(formData) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || `Erro ${response.status}`);
+
+            if (data.success) {
+                toastr.success(data.message);
+                if (callback) callback(data);
+                if (!isEditing) form.reset();
+            } else {
+                toastr.error(data.message || 'Ocorreu um erro desconhecido.');
+            }
+        } catch (error) {
+            console.error('Erro de submissão:', error);
+            toastr.error(error.message || 'Não foi possível conectar ao servidor.');
+        } finally {
+            button.disabled = false;
+            const spinner = button.querySelector('.spinner-border');
+            if(spinner) spinner.remove();
+            btnTextSpan.textContent = originalBtnText;
+        }
     }
 
-    $(document).ready(function() {
-        // --- Lógica existente para o botão "Teste Robô" ---
-        $(document).on('click', '#teste-robo-btn', function() {
-            console.log('Botão "Teste Robô" clicado (via jQuery).');
+    // --- LÓGICA DE CAMINHÃO ---
+    const formCaminhao = document.getElementById('form-add-caminhao');
+    const caminhaoTableBody = document.getElementById('caminhoes-table-body');
+    const caminhaoFormTitle = document.getElementById('caminhao-form-title');
+    const btnCancelEditCaminhao = document.getElementById('btn-cancel-edit-caminhao');
 
-            const jwtToken = localStorage.getItem('jwt_token');
-            if (!jwtToken) {
-                toastr.error('Erro de autenticação: Token não encontrado. Por favor, faça login novamente.');
-                return;
-            }
-
-            // Coletar dados dos selects de motorista e caminhão
-            const motoristaSelect = document.getElementById('agenda-motorista-select');
-            const caminhaoSelect = document.getElementById('agenda-caminhao-select');
-            const selectedMotoristaOption = motoristaSelect ? motoristaSelect.options[motoristaSelect.selectedIndex] : null;
-            const selectedCaminhaoOption = caminhaoSelect ? caminhaoSelect.options[caminhaoSelect.selectedIndex] : null;
-
-            const selectData = {
-                motorista: {
-                    id: selectedMotoristaOption ? selectedMotoristaOption.value : null,
-                    nome: selectedMotoristaOption ? selectedMotoristaOption.text : null,
-                    ...(selectedMotoristaOption ? selectedMotoristaOption.dataset : {})
-                },
-                caminhao: {
-                    id: selectedCaminhaoOption ? selectedCaminhaoOption.value : null,
-                    placa_display: selectedCaminhaoOption ? selectedCaminhaoOption.text : null,
-                    ...(selectedCaminhaoOption ? selectedCaminhaoOption.dataset : {})
-                },
-                outros_dados: {
-                    peso_a_carregar: document.getElementById('peso-carregar').value,
-                    contrato: '',
-                    pedido: ''
-                }
-            };
-            
-            fetch('/api/teste_robo_config', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + jwtToken
-                },
-                body: JSON.stringify({ select_data: selectData })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.message || 'Erro no servidor') });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                if (data.success) {
-                    toastr.success(data.message || 'Comando enviado. Verifique o console do servidor.');
-                }
-            })
-            .catch(error => {
-                console.error('Erro na requisição:', error);
-                toastr.error(error.message || 'Erro de comunicação ao testar o robô.');
-            });
+    if (formCaminhao) {
+        formCaminhao.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const caminhaoId = this.querySelector('#edit-caminhao-id').value;
+            const isEditing = !!caminhaoId;
+            const url = isEditing ? `/edit_caminhao/${caminhaoId}` : this.action;
+            const callback = isEditing ? (data) => { if (data.caminhao) { updateCaminhaoRow(data.caminhao); cancelEditCaminhao(); }} : (data) => { if (data.caminhao) addCaminhaoRow(data.caminhao); };
+            handleGenericSubmit(this, url, callback, isEditing);
         });
-    });
+    }
+
+    if (caminhaoTableBody) {
+        caminhaoTableBody.addEventListener('click', function(event) {
+            const editButton = event.target.closest('.btn-edit-caminhao');
+            if (editButton) {
+                event.preventDefault();
+                startEditCaminhao(editButton.dataset.id);
+            }
+        });
+    }
+
+    if(btnCancelEditCaminhao) {
+        btnCancelEditCaminhao.addEventListener('click', cancelEditCaminhao);
+    }
+
+    async function startEditCaminhao(caminhaoId) {
+        try {
+            const response = await fetch(`/api/caminhao/${caminhaoId}`);
+            if (!response.ok) throw new Error('Não foi possível carregar os dados do caminhão.');
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message);
+            
+            const c = data.caminhao;
+            formCaminhao.querySelector('[name="placa"]').value = c.placa || '';
+            formCaminhao.querySelector('[name="uf"]').value = c.uf || '';
+            formCaminhao.querySelector('[name="tipo_carroceria"]').value = c.tipo_carroceria || '';
+            formCaminhao.querySelector('[name="placa_reboque1"]').value = c.placa_reboque1 || '';
+            formCaminhao.querySelector('[name="uf1"]').value = c.uf1 || '';
+            formCaminhao.querySelector('[name="placa_reboque2"]').value = c.placa_reboque2 || '';
+            formCaminhao.querySelector('[name="uf2"]').value = c.uf2 || '';
+            formCaminhao.querySelector('[name="placa_reboque3"]').value = c.placa_reboque3 || '';
+            formCaminhao.querySelector('[name="uf3"]').value = c.uf3 || '';
+            formCaminhao.querySelector('#edit-caminhao-id').value = c.id;
+
+            caminhaoFormTitle.textContent = `Editando Caminhão: ${c.placa}`;
+            const submitButton = formCaminhao.querySelector('button[type="submit"]');
+            submitButton.querySelector('.btn-text').textContent = 'Salvar Alterações';
+            submitButton.classList.replace('btn-success', 'btn-primary');
+            btnCancelEditCaminhao.style.display = 'inline-block';
+            window.scrollTo({ top: formCaminhao.offsetTop, behavior: 'smooth' });
+        } catch(error) { toastr.error(error.message); }
+    }
+
+    function cancelEditCaminhao() {
+        formCaminhao.reset();
+        formCaminhao.querySelector('#edit-caminhao-id').value = '';
+        caminhaoFormTitle.textContent = 'Adicionar Novo Caminhão';
+        const submitButton = formCaminhao.querySelector('button[type="submit"]');
+        submitButton.querySelector('.btn-text').textContent = 'Adicionar';
+        submitButton.classList.replace('btn-primary', 'btn-success');
+        btnCancelEditCaminhao.style.display = 'none';
+    }
+
+    function addCaminhaoRow(c) {
+        const newRow = caminhaoTableBody.insertRow(0);
+        newRow.id = `caminhao-row-${c.id}`;
+        newRow.innerHTML = `<td>${c.placa}</td><td>${c.uf}</td><td>${c.tipo_carroceria || ''}</td><td>${c.placa_reboque1 || ''}</td><td>${c.placa_reboque2 || ''}</td><td>${c.placa_reboque3 || ''}</td>
+            <td><button class="btn btn-sm btn-primary btn-edit-caminhao" data-id="${c.id}"><i class="fas fa-edit"></i></button> <a href="/delete_caminhao/${c.id}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>`;
+    }
+
+    function updateCaminhaoRow(c) {
+        const row = document.getElementById(`caminhao-row-${c.id}`);
+        if (row) {
+            row.cells[0].textContent = c.placa;
+            row.cells[1].textContent = c.uf;
+            row.cells[2].textContent = c.tipo_carroceria || '';
+            row.cells[3].textContent = c.placa_reboque1 || '';
+            row.cells[4].textContent = c.placa_reboque2 || '';
+            row.cells[5].textContent = c.placa_reboque3 || '';
+        }
+    }
+
+    // --- LÓGICA DE MOTORISTA ---
+    const formMotorista = document.getElementById('form-add-motorista');
+    const motoristaTableBody = document.getElementById('motoristas-table-body');
+    const motoristaFormTitle = document.getElementById('motorista-form-title');
+    const btnCancelEditMotorista = document.getElementById('btn-cancel-edit-motorista');
+
+    if (formMotorista) {
+        formMotorista.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const motoristaId = this.querySelector('#edit-motorista-id').value;
+            const isEditing = !!motoristaId;
+            const url = isEditing ? `/edit_motorista/${motoristaId}` : this.action;
+            const callback = isEditing ? (data) => { if (data.motorista) { updateMotoristaRow(data.motorista); cancelEditMotorista(); }} : (data) => { if (data.motorista) addMotoristaRow(data.motorista); };
+            handleGenericSubmit(this, url, callback, isEditing);
+        });
+    }
+
+    if (motoristaTableBody) {
+        motoristaTableBody.addEventListener('click', function(event) {
+            const editButton = event.target.closest('.btn-edit-motorista');
+            if (editButton) {
+                event.preventDefault();
+                startEditMotorista(editButton.dataset.id);
+            }
+        });
+    }
+    
+    if (btnCancelEditMotorista) {
+        btnCancelEditMotorista.addEventListener('click', cancelEditMotorista);
+    }
+
+    async function startEditMotorista(motoristaId) {
+        try {
+            const response = await fetch(`/api/motorista/${motoristaId}`);
+            if (!response.ok) throw new Error('Não foi possível carregar dados.');
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message);
+            
+            const m = data.motorista;
+            formMotorista.querySelector('[name="nome"]').value = m.nome || '';
+            formMotorista.querySelector('[name="cpf"]').value = m.cpf || '';
+            formMotorista.querySelector('[name="telefone"]').value = m.telefone || '';
+            formMotorista.querySelector('[name="endereco"]').value = m.endereco || '';
+            formMotorista.querySelector('[name="cidade"]').value = m.cidade || '';
+            formMotorista.querySelector('[name="uf"]').value = m.uf || '';
+            formMotorista.querySelector('#edit-motorista-id').value = m.id;
+
+            motoristaFormTitle.textContent = `Editando Motorista: ${m.nome}`;
+            const submitButton = formMotorista.querySelector('button[type="submit"]');
+            submitButton.querySelector('.btn-text').textContent = 'Salvar Alterações';
+            submitButton.classList.replace('btn-success', 'btn-primary');
+            btnCancelEditMotorista.style.display = 'inline-block';
+            window.scrollTo({ top: formMotorista.offsetTop, behavior: 'smooth' });
+        } catch(error) { toastr.error(error.message); }
+    }
+
+    function cancelEditMotorista() {
+        formMotorista.reset();
+        formMotorista.querySelector('#edit-motorista-id').value = '';
+        motoristaFormTitle.textContent = 'Adicionar Novo Motorista';
+        const submitButton = formMotorista.querySelector('button[type="submit"]');
+        submitButton.querySelector('.btn-text').textContent = 'Adicionar';
+        submitButton.classList.replace('btn-primary', 'btn-success');
+        btnCancelEditMotorista.style.display = 'none';
+    }
+
+    function addMotoristaRow(m) {
+        const newRow = motoristaTableBody.insertRow(0);
+        newRow.id = `motorista-row-${m.id}`;
+        newRow.innerHTML = `<td>${m.nome}</td><td>${m.cpf}</td><td>${m.telefone || ''}</td><td>${m.cidade || ''}</td><td>${m.uf || ''}</td>
+            <td><button class="btn btn-sm btn-primary btn-edit-motorista" data-id="${m.id}"><i class="fas fa-edit"></i></button> <a href="/delete_motorista/${m.id}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza?');"><i class="fas fa-trash"></i></a></td>`;
+    }
+
+    function updateMotoristaRow(m) {
+        const row = document.getElementById(`motorista-row-${m.id}`);
+        if (row) {
+            row.cells[0].textContent = m.nome;
+            row.cells[1].textContent = m.cpf;
+            row.cells[2].textContent = m.telefone || '';
+            row.cells[3].textContent = m.cidade || '';
+            row.cells[4].textContent = m.uf || '';
+        }
+    }
+});
 </script>
 {% endblock %}

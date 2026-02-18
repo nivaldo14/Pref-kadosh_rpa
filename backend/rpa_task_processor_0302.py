@@ -5,7 +5,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright, Page, expect, TimeoutError as PlaywrightTimeoutError
 import re
 
-#from datetime import datetime
+from datetime import datetime
 import os
 
 
@@ -75,7 +75,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
         
         print(f"Configuração 'head_evento' é {mostrar_tela}. Modo headless do navegador: {run_headless_mode}.")
 
-        browser = await playwright.chromium.launch(headless=run_headless_mode, args=["--start-fullscreen"])
+        browser = await playwright.chromium.launch(headless=run_headless_mode, slow_mo=50, args=["--start-fullscreen"])
         context = await browser.new_context(storage_state=storage_state if storage_state else {})
         page = await context.new_page()
 
@@ -129,7 +129,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             print("\n--- Chamando monitor_agendamento_status para verificar o protocolo/pedido ---")
             monitor_result = await monitor_agendamento_status(
                 page=page, 
-                config={"tempo_espera_segundos": config.get("tempo_espera_segundos", 1)},
+                config={"tempo_espera_segundos": config.get("tempo_espera_segundos", 30)},
                 protocolo=protocolo_procurado, 
                 pedido=pedido_procurado
             )
@@ -157,12 +157,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 botao_agendar = linha_do_item.locator(':text("Agendar Pedido")')
                 await botao_agendar.click()
                 
-                #print("\n--- Iniciando preenchimento de dados do veículo e contato ---")
-                
-                agora = datetime.now()
-                ts = agora.strftime("%H:%M:%S.%f")
-
-                print(f"\n[{ts}] --- Iniciando preenchimento de dados do veículo e contato ---")
+                print("\n--- Iniciando preenchimento de dados do veículo e contato ---")
                 
                 #cargaSolicitada_val=config.get("carga_solicitada")
                 cargaSolicitada_val=agenda_item.get("carga_solicitada")
@@ -223,16 +218,16 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa' principal vazio no JSON. Pulando.")
 
-                # uf_placa = caminhao.get("uf")
-                # if uf_placa:
-                #     try:
-                #         await page.locator("[id='form-minhas-cotacoes:uf-placa_label']").click()
-                #         await page.locator(f"//li[@data-label='{uf_placa}']").click()
-                #         print(f"[SUCESSO] UF da Placa selecionada: {uf_placa}")
-                #     except TimeoutError:
-                #         print(f"[FALHA] Não foi possível selecionar a UF da Placa: {uf_placa}")
-                # else:
-                #     print("[INFO] Campo 'UF' da placa principal vazio no JSON. Pulando.")
+                uf_placa = caminhao.get("uf")
+                if uf_placa:
+                    try:
+                        await page.locator("[id='form-minhas-cotacoes:uf-placa_label']").click()
+                        await page.locator(f"//li[@data-label='{uf_placa}']").click()
+                        print(f"[SUCESSO] UF da Placa selecionada: {uf_placa}")
+                    except TimeoutError:
+                        print(f"[FALHA] Não foi possível selecionar a UF da Placa: {uf_placa}")
+                else:
+                    print("[INFO] Campo 'UF' da placa principal vazio no JSON. Pulando.")
 
                 tipo_carroceria = caminhao.get("tipo_carroceria")
                 if tipo_carroceria:
@@ -255,16 +250,16 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 1' vazio no JSON. Pulando.")
                 
-                # uf1 = caminhao.get("uf1")
-                # if uf1:
-                #     try:
-                #         await page.locator("[id='form-minhas-cotacoes:uf-reboque_label']").click() # Corrected locator
-                #         await page.locator(f"//li[@data-label='{uf1}']").click()
-                #         print(f"[SUCESSO] UF Reboque 1 selecionada: {uf1}")
-                #     except TimeoutError:
-                #         print(f"[FALHA] Não foi possível selecionar a UF Reboque 1: {uf1}")
-                # else:
-                #     print("[INFO] Campo 'UF Reboque 1' vazio no JSON. Pulando.")
+                uf1 = caminhao.get("uf1")
+                if uf1:
+                    try:
+                        await page.locator("[id='form-minhas-cotacoes:uf-reboque_label']").click() # Corrected locator
+                        await page.locator(f"//li[@data-label='{uf1}']").click()
+                        print(f"[SUCESSO] UF Reboque 1 selecionada: {uf1}")
+                    except TimeoutError:
+                        print(f"[FALHA] Não foi possível selecionar a UF Reboque 1: {uf1}")
+                else:
+                    print("[INFO] Campo 'UF Reboque 1' vazio no JSON. Pulando.")
                 
                 placa_reboque2 = caminhao.get("placa_reboque2")
                 if placa_reboque2:
@@ -276,21 +271,16 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 2' vazio no JSON. Pulando.")
 
-                # uf2 = caminhao.get("uf2")
-                # if uf2 and placa_reboque2:
-                #     try:
-                #         #await page.locator("[id='form-minhas-cotacoes:uf-reboque-2_label']").click()
-                #         #await page.locator(f"//li[@data-label='{uf2}']").click()
-                        
-                #         dropdown_uf2 = page.locator("[id='form-minhas-cotacoes:uf-reboque-2_label']")
-                #         await dropdown_uf2.click()
-                #         # Clica na opção pelo data-label
-                #         await page.locator(f"//li[@data-label='{uf2}']").click()
-                #         print(f"[SUCESSO] UF Reboque 2 selecionada: {uf2}")
-                #     except TimeoutError:
-                #         print(f"[FALHA] Não foi possível selecionar a UF Reboque 2: {uf2}")
-                # else:
-                #     print("[INFO] Campo 'UF Reboque 2' vazio no JSON. Pulando.")
+                uf2 = caminhao.get("uf2")
+                if uf2:
+                    try:
+                        await page.locator("[id='form-minhas-cotacoes:uf-reboque-2_label']").click()
+                        await page.locator(f"//li[@data-label='{uf2}']").click()
+                        print(f"[SUCESSO] UF Reboque 2 selecionada: {uf2}")
+                    except TimeoutError:
+                        print(f"[FALHA] Não foi possível selecionar a UF Reboque 2: {uf2}")
+                else:
+                    print("[INFO] Campo 'UF Reboque 2' vazio no JSON. Pulando.")
 
                 placa_reboque3 = caminhao.get("placa_reboque3")
                 if placa_reboque3:
@@ -302,23 +292,16 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 else:
                     print("[INFO] Campo 'Placa Reboque 3' vazio no JSON. Pulando.")
 
-                # uf3 = caminhao.get("uf3")
-                # if uf3 and placa_reboque3:
-                #     try:
-                #         await page.locator("[id='form-minhas-cotacoes:uf-reboque-3_label']").click()
-                #         await page.locator(f"//li[@data-label='{uf3}']").click()
-                        
-                        
-                #         #uf3_select = page.locator("[id='form-minhas-cotacoes:uf-reboque-3_label']")
-                #         #await uf3_select.select_option(label=uf3)
-                #         #dropdown = page.get_by_role("combobox", name="UF Reboque 3")
-                #         #await dropdown.click()
-                #         #await page.get_by_role("option", name=uf3).click()
-                #         print(f"[SUCESSO] UF Reboque 3 selecionada: {uf3}")
-                #     except TimeoutError:
-                #         print(f"[FALHA] Não foi possível selecionar a UF Reboque 3: {uf3}")
-                # else:
-                #     print("[INFO] Campo 'UF Reboque 3' vazio no JSON. Pulando.")
+                uf3 = caminhao.get("uf3")
+                if uf3:
+                    try:
+                        await page.locator("[id='form-minhas-cotacoes:uf-reboque-3_label']").click()
+                        await page.locator(f"//li[@data-label='{uf3}']").click()
+                        print(f"[SUCESSO] UF Reboque 3 selecionada: {uf3}")
+                    except TimeoutError:
+                        print(f"[FALHA] Não foi possível selecionar a UF Reboque 3: {uf3}")
+                else:
+                    print("[INFO] Campo 'UF Reboque 3' vazio no JSON. Pulando.")
                 
                 element_to_click = page.locator("[id=\"form-minhas-cotacoes:j_idt126\"]")
                 await expect(element_to_click).to_be_visible(timeout=10000)
@@ -342,28 +325,30 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                     ],
                     element_description="Campo 'Nro.Cpf'"
                 )
-                await expect(campo_cpf_iframe).to_be_editable(timeout=1000)
+                await expect(campo_cpf_iframe).to_be_editable(timeout=10000)
                 
                 print(f"Preenchendo o campo CPF com: {nro_cpf}")
                 #await campo_cpf_iframe.type(nro_cpf, delay=150) # Adiciona um delay de 150ms entre cada caractere
-                await campo_cpf_iframe.type(nro_cpf, delay=0.5) # Adiciona um delay de 150ms entre cada caractere
+                await campo_cpf_iframe.type(nro_cpf, delay=100) # Adiciona um delay de 150ms entre cada caractere
                 print("[SUCESSO] Campo CPF preenchido.")
 
                 botao_pesquisar_iframe = iframe_content.get_by_role("button", name=" Pesquisar")
-                await expect(botao_pesquisar_iframe).to_be_visible(timeout=1000)
+                await expect(botao_pesquisar_iframe).to_be_visible(timeout=5000)
                 await botao_pesquisar_iframe.click()
                 print("Botão 'Pesquisar' foi clicado após preencher o CPF.")
+
+                await page.wait_for_timeout(2000)
 
                 try:
                     print("Tentando clicar no botão 'Selecionar'...")
                     botao_selecionar = iframe_content.get_by_role("button", name=" Selecionar")
-                    await expect(botao_selecionar).to_be_visible(timeout=1000) # Aumentar timeout para dar tempo da busca acontecer
+                    await expect(botao_selecionar).to_be_visible(timeout=7000) # Aumentar timeout para dar tempo da busca acontecer
                     await botao_selecionar.click()
                     print("[SUCESSO] Botão 'Selecionar' clicado.")
                 except TimeoutError:
                     print("[INFO] Botão 'Selecionar' não encontrado. Tentando alternativa 'Sim'...")
                     botao_sim = iframe_content.get_by_role("button", name=" Sim")
-                    await expect(botao_sim).to_be_visible(timeout=500)
+                    await expect(botao_sim).to_be_visible(timeout=5000)
                     await botao_sim.click()
                     print("[SUCESSO] Botão 'Sim' clicado como alternativa.")
 
@@ -372,11 +357,7 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                 modo_execucao = config.get("modo_execucao", "producao") # Default para 'producao' se não for especificado
 
                 salvar_button = page.get_by_role("button", name=" Salvar")
-                await expect(salvar_button).to_be_visible(timeout=500)
-                
-                agoraFim = datetime.now()
-                tsFim = agoraFim.strftime("%H:%M:%S.%f")
-                print(f"\n[{tsFim}] --- fim agendamento  teste---")
+                await expect(salvar_button).to_be_visible(timeout=5000)
                 
                 if modo_execucao == "teste":
                     print("\n[MODO TESTE] EVENTO EM TESTE - NAO ESTA AGENDANDO!")
@@ -434,7 +415,6 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
                         #return {"status": "ok"}
                         return {"success": True, "status": "agendado", "message": "Agendamento processado com sucesso.", "new_storage_state": new_storage_state,"cam_erro_img": caminho}
                 
-                    
                     # print("\n[MODO PRODUCAO] EVENTO EM PRODUCAO - EFETUANDO AGENDANDAMENTO!")
                     # await salvar_button.click(force=True)
                     # await page.wait_for_timeout(3000) 
@@ -483,34 +463,12 @@ async def process_agendamento_main_task(rpa_params: dict, run_headless: bool = T
             print(error_log_message)
             
             user_facing_message = "Ocorreu um erro durante a automação. Verifique o console para mais detalhes."
-            screenshot_path = None
-            try:
-                if 'page' in locals() and not page.is_closed():
-                    os.makedirs("erro_screenimg", exist_ok=True)
-                    agora = datetime.now()
-                    protocolo_id = protocolo_procurado or "desconhecido"
-                    pedido_id = pedido_procurado or "desconhecido"
-                    nome_arquivo = f"pt{protocolo_id}_pd{pedido_id}_{agora.strftime('%Y%m%d_%H%M%S')}_geral.png"
-                    screenshot_path = os.path.join("erro_screenimg", nome_arquivo)
-                    await page.screenshot(path=screenshot_path, full_page=True)
-                    print(f"[ERRO] Screenshot da falha geral salvo em: {screenshot_path}")
-            except Exception as screenshot_e:
-                print(f"[ERRO CRÍTICO] Falha ao tentar capturar o screenshot do erro: {screenshot_e}")
-
             if "Target page, context or browser has been closed" in tb_str:
                 user_facing_message = "O navegador foi fechado inesperadamente durante a automação."
-            elif isinstance(e, PlaywrightTimeoutError):
+            elif isinstance(e, TimeoutError):
                  user_facing_message = "A automação excedeu o tempo de espera por um elemento na página."
 
-            return {
-                "success": False, 
-                "status": "erro", 
-                "message": tb_str, 
-                "user_facing_message": user_facing_message, 
-                "new_storage_state": new_storage_state,
-                "cam_erro_img": screenshot_path, # Adiciona o caminho do screenshot
-                "traceback": tb_str # Adiciona o traceback para log
-            }
+            return {"success": False, "status": "erro", "message": tb_str, "user_facing_message": user_facing_message, "new_storage_state": new_storage_state}
 
         finally:
             if browser.is_connected():

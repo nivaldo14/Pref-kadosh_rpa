@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Erro Inesperado{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h1 class="mb-0"><i class="fas fa-exclamation-triangle mr-3"></i>Ocorreu um Erro</h1>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">Erro Interno do Servidor</h4>
+                    <p class="card-text">
+                        Lamentamos, mas um erro inesperado aconteceu em nosso sistema.
+                    </p>
+                    {% if error_message %}
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <strong>Detalhes do Erro:</strong> {{ error_message }}
+                    </div>
+                    {% endif %}
+                    <p>
+                        Nossa equipe de desenvolvimento já foi notificada automaticamente e está trabalhando para corrigir o problema.
+                    </p>
+                    <p>
+                        Por favor, tente novamente mais tarde.
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">
+                        <i class="fas fa-home mr-2"></i>Voltar para o Painel Principal
+                    </a>
+                </div>
+                <div class="card-footer text-muted">
+                    Se o problema persistir, por favor, entre em contato com o suporte.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block login_content %}
+{# Este bloco é usado na página de login, mas o estendemos aqui para evitar erros de template caso o erro 500 ocorra antes do login. #}
+{% endblock %}

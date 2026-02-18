@@ -168,7 +168,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar agendas:', error);
-            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.', 'danger');
+            showAlert('Falha ao carregar agendas. Verifique sua conexão ou autenticação.XXXXXX', 'danger');
+            setTimeout(() => {
+                // ajuste esse seletor para o seu componente de alerta
+                const alertElem = document.querySelector('.alert');
+                if (alertElem) {
+                    alertElem.remove(); // ou alertElem.style.display = 'none';
+                }
+            }, 1000);
+
+
             return [];
         }
     }

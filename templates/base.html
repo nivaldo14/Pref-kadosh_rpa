@@ -32,9 +32,31 @@
         .toast-like-info strong {
             color: #495057;
         }
+        /* Estilos para o banner de status da conexão */
+        #connection-status {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            color: white;
+            z-index: 1050; /* Alta prioridade para ficar sobre outros elementos */
+            display: none; /* Começa oculto */
+            font-weight: 600;
+        }
+        #connection-status.offline {
+            background-color: #dc3545; /* Vermelho para offline */
+        }
+        #connection-status.online {
+            background-color: #28a745; /* Verde para online */
+        }
     </style>
 </head>
 <body>
+    {# Banner de status da conexão #}
+    <div id="connection-status"></div>
+
     {% if user %}
     {# --- Layout para usuários logados --- #}
     <div class="offcanvas-menu">
@@ -102,6 +124,31 @@
                 });
             }, 3000);
         });
+
+        // Lógica para status da conexão
+        const connectionStatusBanner = document.getElementById('connection-status');
+
+        function updateOnlineStatus() {
+            if (!navigator.onLine) {
+                connectionStatusBanner.textContent = 'Sem conexão com a internet. Aguardando reconexão...';
+                connectionStatusBanner.className = 'offline';
+                $(connectionStatusBanner).fadeIn();
+            } else {
+                connectionStatusBanner.textContent = 'Conexão restaurada!';
+                connectionStatusBanner.className = 'online';
+                setTimeout(() => {
+                    $(connectionStatusBanner).fadeOut();
+                }, 2000); // Esconde a notificação verde após 2 segundos
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // Verifica o status inicial ao carregar a página
+        if (!navigator.onLine) {
+            updateOnlineStatus();
+        }
     </script>
 
     {% if user %}

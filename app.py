@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, g
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, g, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, extract
 from sqlalchemy.dialects.postgresql import JSONB
@@ -279,6 +279,22 @@ class RpaSessao(db.Model):
         db.CheckConstraint('id = 1', name='single_row_check'),
     )
 
+class LogErro(db.Model):
+    __tablename__ = 'log_erro'
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    user_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
+    agenda_id = db.Column(db.Integer, db.ForeignKey('agenda.id'), nullable=True)
+    route = db.Column(db.String(255), nullable=True)
+    error_message = db.Column(db.Text, nullable=False)
+    stack_trace = db.Column(db.Text, nullable=True)
+    screenshot_path = db.Column(db.String(255), nullable=True)
+
+    # Relationships
+    user = db.relationship('Usuario', backref=db.backref('logs_de_erro', lazy=True))
+    agenda = db.relationship('Agenda', backref=db.backref('logs_de_erro', lazy=True))
+
+
 # --- Routes ---
 @app.route('/teste')
 def teste():
@@ -484,8 +500,18 @@ def cadastros():
     
     # Data for dropdowns
     ufs = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
-    tipos_carroceria = ['Cavalo Mecânico','Graneleiro','Cavalo Mecânico Trucado', 'Toco', 'Truck', 'Bitruck', 'Carreta 2 eixos', 'Carreta 3 eixos', 'Carreta Cavalo Trucado', 'Bitrem', 'Rodotrem']
-    #tipos_carroceria = carregar_tipos_carroceria("mds/tpcarroceria.md")
+    #tipos_carroceria = ['Cavalo Mecânico','Graneleiro','Cavalo Mecânico Trucado', 'Toco', 'Truck', 'Bitruck', 'Carreta 2 eixos', 'Carreta 3 eixos', 'Carreta Cavalo Trucado', 'Bitrem', 'Rodotrem']
+    tipos_carroceria = carregar_tipos_carroceria("mds/tpcarroceria.md")
+    
+    # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    # # monta o caminho absoluto para mds/tpcarroceria.md
+    # CARROCERIA_PATH = os.path.join(BASE_DIR, "mds", "tpcarroceria.md")
+
+    # tipos_carroceria = carregar_tipos_carroceria(CARROCERIA_PATH)
+    
+    
+
     
     # Determine active tab
     active_tab = request.args.get('tab', 'caminhoes')
@@ -543,8 +569,14 @@ def get_agendas_executadas():
 @login_required
 def add_caminhao():
     try:
+        # Check for existing plate
+        placa = request.form['placa'].upper()
+        existing_caminhao = Caminhao.query.filter_by(placa=placa).first()
+        if existing_caminhao:
+            return jsonify(success=False, message=f'Caminhão com a placa {placa} já existe.'), 409
+
         new_caminhao = Caminhao(
-            placa=request.form['placa'].upper(),
+            placa=placa,
             uf=request.form['uf'],
             tipo_carroceria=request.form.get('tipo_carroceria'),
             placa_reboque1=request.form.get('placa_reboque1', '').upper(),
@@ -556,20 +588,37 @@ def add_caminhao():
         )
         db.session.add(new_caminhao)
         db.session.commit()
-        flash('Caminhão adicionado com sucesso!', 'success')
+        
+        caminhao_data = {
+            'id': new_caminhao.id,
+            'placa': new_caminhao.placa,
+            'uf': new_caminhao.uf,
+            'tipo_carroceria': new_caminhao.tipo_carroceria,
+            'placa_reboque1': new_caminhao.placa_reboque1,
+            'uf1': new_caminhao.uf1,
+            'placa_reboque2': new_caminhao.placa_reboque2,
+            'uf2': new_caminhao.uf2,
+            'placa_reboque3': new_caminhao.placa_reboque3,
+            'uf3': new_caminhao.uf3,
+        }
+        return jsonify(success=True, message='Caminhão adicionado com sucesso!', caminhao=caminhao_data)
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao adicionar caminhão: {e}', 'danger')
-        
-    return redirect(url_for('cadastros', tab='caminhoes'))
+        return jsonify(success=False, message=f'Erro ao adicionar caminhão: {e}'), 500
 
 @app.route('/add_motorista', methods=['POST'])
 @login_required
 def add_motorista():
     try:
+        # Check for existing CPF
+        cpf = request.form['cpf']
+        existing_motorista = Motorista.query.filter_by(cpf=cpf).first()
+        if existing_motorista:
+            return jsonify(success=False, message=f'Motorista com o CPF {cpf} já existe.'), 409
+
         new_motorista = Motorista(
             nome=request.form['nome'],
-            cpf=request.form['cpf'],
+            cpf=cpf,
             telefone=request.form.get('telefone'),
             endereco=request.form.get('endereco'),
             cidade=request.form.get('cidade'),
@@ -577,16 +626,68 @@ def add_motorista():
         )
         db.session.add(new_motorista)
         db.session.commit()
-        flash('Motorista adicionado com sucesso!', 'success')
+        
+        motorista_data = {
+            'id': new_motorista.id,
+            'nome': new_motorista.nome,
+            'cpf': new_motorista.cpf,
+            'telefone': new_motorista.telefone,
+            'cidade': new_motorista.cidade,
+            'uf': new_motorista.uf
+        }
+        return jsonify(success=True, message='Motorista adicionado com sucesso!', motorista=motorista_data)
     except Exception as e:
         db.session.rollback()
-        flash(f'Erro ao adicionar motorista: {e}', 'danger')
+        return jsonify(success=False, message=f'Erro ao adicionar motorista: {e}'), 500
 
-    return redirect(url_for('cadastros', tab='motoristas'))
-
-@app.route('/edit_caminhao/<int:id>')
+@app.route('/edit_caminhao/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_caminhao(id):
-    flash('Funcionalidade de edição de caminhão ainda não implementada.', 'info')
+    caminhao = db.session.get(Caminhao, id)
+    if not caminhao:
+        flash('Caminhão não encontrado.', 'warning')
+        return redirect(url_for('cadastros', tab='caminhoes'))
+
+    if request.method == 'POST':
+        try:
+            # Validação para placa única (ignorando o próprio caminhão)
+            nova_placa = request.form.get('placa').upper()
+            if nova_placa != caminhao.placa:
+                existing_caminhao = Caminhao.query.filter(Caminhao.placa == nova_placa, Caminhao.id != id).first()
+                if existing_caminhao:
+                    return jsonify(success=False, message=f'A placa {nova_placa} já está em uso por outro caminhão.'), 409
+
+            caminhao.placa = nova_placa
+            caminhao.uf = request.form['uf']
+            caminhao.tipo_carroceria = request.form.get('tipo_carroceria')
+            caminhao.placa_reboque1 = request.form.get('placa_reboque1', '').upper()
+            caminhao.uf1 = request.form.get('uf1')
+            caminhao.placa_reboque2 = request.form.get('placa_reboque2', '').upper()
+            caminhao.uf2 = request.form.get('uf2')
+            caminhao.placa_reboque3 = request.form.get('placa_reboque3', '').upper()
+            caminhao.uf3 = request.form.get('uf3')
+            
+            db.session.commit()
+            
+            caminhao_data = {
+                'id': caminhao.id,
+                'placa': caminhao.placa,
+                'uf': caminhao.uf,
+                'tipo_carroceria': caminhao.tipo_carroceria,
+                'placa_reboque1': caminhao.placa_reboque1,
+                'uf1': caminhao.uf1,
+                'placa_reboque2': caminhao.placa_reboque2,
+                'uf2': caminhao.uf2,
+                'placa_reboque3': caminhao.placa_reboque3,
+                'uf3': caminhao.uf3,
+            }
+            return jsonify(success=True, message='Caminhão atualizado com sucesso!', caminhao=caminhao_data)
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(success=False, message=f'Erro ao atualizar caminhão: {e}'), 500
+
+    # O método GET pode continuar redirecionando
+    flash('Para editar, use os campos no formulário principal após clicar em "Editar".', 'info')
     return redirect(url_for('cadastros', tab='caminhoes'))
 
 @app.route('/delete_caminhao/<int:id>')
@@ -606,9 +707,48 @@ def delete_caminhao(id):
     return redirect(url_for('cadastros', tab='caminhoes'))
 
 
-@app.route('/edit_motorista/<int:id>')
+@app.route('/edit_motorista/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit_motorista(id):
-    flash('Funcionalidade de edição de motorista ainda não implementada.', 'info')
+    motorista = db.session.get(Motorista, id)
+    if not motorista:
+        flash('Motorista não encontrado.', 'warning')
+        return redirect(url_for('cadastros', tab='motoristas'))
+
+    if request.method == 'POST':
+        try:
+            # Validação para CPF único (ignorando o próprio motorista)
+            novo_cpf = request.form.get('cpf')
+            if novo_cpf != motorista.cpf:
+                existing_motorista = Motorista.query.filter(Motorista.cpf == novo_cpf, Motorista.id != id).first()
+                if existing_motorista:
+                    return jsonify(success=False, message=f'O CPF {novo_cpf} já está em uso por outro motorista.'), 409
+
+            motorista.nome = request.form['nome']
+            motorista.cpf = novo_cpf
+            motorista.telefone = request.form.get('telefone')
+            motorista.endereco = request.form.get('endereco')
+            motorista.cidade = request.form.get('cidade')
+            motorista.uf = request.form.get('uf')
+            
+            db.session.commit()
+            
+            motorista_data = {
+                'id': motorista.id,
+                'nome': motorista.nome,
+                'cpf': motorista.cpf,
+                'telefone': motorista.telefone,
+                'cidade': motorista.cidade,
+                'uf': motorista.uf
+            }
+            return jsonify(success=True, message='Motorista atualizado com sucesso!', motorista=motorista_data)
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(success=False, message=f'Erro ao atualizar motorista: {e}'), 500
+    
+    # O método GET pode continuar redirecionando ou renderizar uma página de edição separada se desejado.
+    # Por enquanto, manter o comportamento de redirecionamento para GET.
+    flash('Para editar, use os campos no formulário principal após clicar em "Editar".', 'info')
     return redirect(url_for('cadastros', tab='motoristas'))
 
 @app.route('/delete_motorista/<int:id>')
@@ -942,6 +1082,24 @@ def get_motoristas():
     motoristas = Motorista.query.all()
     return jsonify([{'id': m.id, 'nome': m.nome, 'cpf': m.cpf, 'telefone': m.telefone} for m in motoristas])
 
+@app.route('/api/motorista/<int:id>')
+@login_required
+def get_motorista(id):
+    motorista = db.session.get(Motorista, id)
+    if not motorista:
+        return jsonify(success=False, message="Motorista não encontrado"), 404
+    
+    motorista_data = {
+        'id': motorista.id,
+        'nome': motorista.nome,
+        'cpf': motorista.cpf,
+        'telefone': motorista.telefone,
+        'endereco': motorista.endereco,
+        'cidade': motorista.cidade,
+        'uf': motorista.uf
+    }
+    return jsonify(success=True, motorista=motorista_data)
+
 @app.route('/api/caminhoes')
 @login_required
 def get_caminhoes():
@@ -952,6 +1110,27 @@ def get_caminhoes():
         'placa_reboque2': c.placa_reboque2, 'uf2': c.uf2,
         'placa_reboque3': c.placa_reboque3, 'uf3': c.uf3
     } for c in caminhoes])
+
+@app.route('/api/caminhao/<int:id>')
+@login_required
+def get_caminhao(id):
+    caminhao = db.session.get(Caminhao, id)
+    if not caminhao:
+        return jsonify(success=False, message="Caminhão não encontrado"), 404
+    
+    caminhao_data = {
+        'id': caminhao.id,
+        'placa': caminhao.placa,
+        'uf': caminhao.uf,
+        'tipo_carroceria': caminhao.tipo_carroceria,
+        'placa_reboque1': caminhao.placa_reboque1,
+        'uf1': caminhao.uf1,
+        'placa_reboque2': caminhao.placa_reboque2,
+        'uf2': caminhao.uf2,
+        'placa_reboque3': caminhao.placa_reboque3,
+        'uf3': caminhao.uf3
+    }
+    return jsonify(success=True, caminhao=caminhao_data)
 
 @app.route('/api/agendas/clear', methods=['POST'])
 @dev_required
@@ -1095,6 +1274,22 @@ def execute_agenda_task(agenda_id):
             if cam_erro_img_path:
                 agenda.cam_erro_img = cam_erro_img_path
 
+            # ### INÍCIO DA LÓGICA DE LOG DE ERRO ###
+            try:
+                log_erro = LogErro(
+                    user_id=g.user.id,
+                    agenda_id=agenda.id,
+                    route=request.path,
+                    error_message=log_content_for_db,
+                    stack_trace=result.get('traceback'), # Supondo que o RPA possa retornar um traceback
+                    screenshot_path=cam_erro_img_path
+                )
+                db.session.add(log_erro)
+                # O commit será feito junto com a atualização da agenda
+            except Exception as log_e:
+                print(f"CRITICAL: Failed to create LogErro instance: {log_e}")
+            # ### FIM DA LÓGICA DE LOG DE ERRO ###
+
             try:
                 db.session.commit()
             except Exception as commit_e:
@@ -1111,10 +1306,28 @@ def execute_agenda_task(agenda_id):
             return jsonify(success=False, message=result.get('user_facing_message', result.get('message', 'Ocorreu um erro durante a execução do RPA.'))), 200
     except Exception as e:
         db.session.rollback()
+        
+        # ### INÍCIO DA LÓGICA DE LOG DE ERRO (EXCEÇÃO GERAL) ###
+        tb_str = traceback.format_exc()
+        error_message = f"Erro inesperado no servidor: {e}"
+        try:
+            log_erro = LogErro(
+                user_id=g.user.id if 'user' in g else None,
+                agenda_id=agenda_id,
+                route=request.path,
+                error_message=error_message,
+                stack_trace=tb_str
+            )
+            db.session.add(log_erro)
+            # O commit será feito junto com a atualização da agenda
+        except Exception as log_e:
+            print(f"CRITICAL: Failed to create LogErro instance in general exception: {log_e}")
+        # ### FIM DA LÓGICA DE LOG DE ERRO (EXCEÇÃO GERAL) ###
+
         agenda.status = 'erro'
-        agenda.log_retorno = f"Erro inesperado no servidor: {e}"
+        agenda.log_retorno = error_message
         db.session.commit()
-        print(f"Erro ao executar automação para agenda {agenda_id}: {e}")
+        print(f"Erro ao executar automação para agenda {agenda_id}: {e}\n{tb_str}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô."), 500
 
 @app.route('/api/agendas/execute_dev_mode/<int:agenda_id>', methods=['POST'])
@@ -1250,6 +1463,21 @@ def execute_agenda_task_dev_mode(agenda_id):
             if cam_erro_img_path:
                 agenda.cam_erro_img = cam_erro_img_path
             
+            # ### INÍCIO DA LÓGICA DE LOG DE ERRO (DEV MODE) ###
+            try:
+                log_erro = LogErro(
+                    user_id=g.user.id,
+                    agenda_id=agenda.id,
+                    route=request.path,
+                    error_message=log_content_for_db,
+                    stack_trace=result.get('traceback'),
+                    screenshot_path=cam_erro_img_path
+                )
+                db.session.add(log_erro)
+            except Exception as log_e:
+                print(f"CRITICAL: Failed to create LogErro instance (Dev Mode): {log_e}")
+            # ### FIM DA LÓGICA DE LOG DE ERRO (DEV MODE) ###
+            
             try:
                 db.session.commit()
             except Exception as commit_e:
@@ -1266,10 +1494,27 @@ def execute_agenda_task_dev_mode(agenda_id):
             return jsonify(success=False, message=result.get('user_facing_message', result.get('message', 'Ocorreu um erro durante a execução do RPA (Dev Mode).'))), 200
     except Exception as e:
         db.session.rollback()
+
+        # ### INÍCIO DA LÓGICA DE LOG DE ERRO (EXCEÇÃO GERAL - DEV MODE) ###
+        tb_str = traceback.format_exc()
+        error_message = f"Erro inesperado no servidor (Dev Mode): {e}"
+        try:
+            log_erro = LogErro(
+                user_id=g.user.id if 'user' in g else None,
+                agenda_id=agenda_id,
+                route=request.path,
+                error_message=error_message,
+                stack_trace=tb_str
+            )
+            db.session.add(log_erro)
+        except Exception as log_e:
+            print(f"CRITICAL: Failed to create LogErro instance in general exception (Dev Mode): {log_e}")
+        # ### FIM DA LÓGICA DE LOG DE ERRO (EXCEÇÃO GERAL - DEV MODE) ###
+
         agenda.status = 'erro (Dev)'
-        agenda.log_retorno = f"Erro inesperado no servidor (Dev Mode): {e}"
+        agenda.log_retorno = error_message
         db.session.commit()
-        print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}")
+        print(f"Erro ao executar automação (Dev Mode) para agenda {agenda_id}: {e}\n{tb_str}")
         return jsonify(success=False, message="Erro interno ao executar a automação do robô (Dev Mode)."), 500
 
 
@@ -1280,6 +1525,53 @@ def serve_error_screenshot(filename):
     from flask import send_from_directory
     # Garante que o caminho é seguro e aponta para o diretório correto
     return send_from_directory(os.path.join(basedir, 'erro_screenimg'), filename)
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
+# --- Error Handling ---
+@app.errorhandler(Exception)
+def handle_global_exception(e):
+    """
+    Manipulador de erro global para capturar todas as exceções não tratadas.
+    Loga o erro no banco de dados e retorna uma resposta apropriada.
+    """
+    tb_str = traceback.format_exc()
+    error_message = f"Erro global não tratado: {e}"
+    
+    print(f"--- ERRO GLOBAL CAPTURADO EM {datetime.now()} ---")
+    print(f"Rota: {request.path}")
+    print(tb_str)
+    
+    try:
+        user_id = session.get('user_id')
+        log_erro = LogErro(
+            user_id=user_id,
+            route=request.path,
+            error_message=error_message,
+            stack_trace=tb_str,
+            screenshot_path=None  # Não é possível capturar screenshot aqui
+        )
+        db.session.add(log_erro)
+        db.session.commit()
+    except Exception as db_error:
+        db.session.rollback()
+        print(f"--- ERRO CRÍTICO AO LOGAR ERRO GLOBAL ---")
+        print(f"Não foi possível salvar o LogErro no banco de dados: {db_error}")
+
+    # Retorna JSON para rotas de API, HTML para as outras
+    # Sempre retorna status 200 OK para "ignorar o erro e continuar" a nível de cliente.
+    if request.path.startswith('/api/'):
+        return jsonify(success=False, message="Um erro inesperado ocorreu. O evento foi registrado e o processamento continuou."), 200
+    
+    # Para rotas que não são da API, renderiza uma página de erro amigável
+    # (É necessário criar o template '500.html')
+    # Adicionar a mensagem de erro ao contexto para ser exibida no template
+    return render_template('500.html', user=g.get('user'), error_message="Um erro inesperado ocorreu. O evento foi registrado e o processamento da aplicação continua."), 200
 
 
 
